@@ -11,6 +11,7 @@ public class Main {
         System.out.print("Enter maximum discharging power in MW: ");
         double maxDischarge= scanner.nextDouble();
 
+
          BatterySpecification battery= new BatterySpecification(
                  capacity,
                  maxCharge,
@@ -23,9 +24,19 @@ public class Main {
 
          );
          BatterySimulator simulator= new BatterySimulator(battery);
-         System.out.println("Initial energy" + simulator.getCurrentEnergyMWh()+"MWh");
-         System.out.println("Initial SoC" + simulator.getCurrentSoC()+"%");
-         System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
+         System.out.println("Initial energy: " + simulator.getCurrentEnergyMWh()+"MWh");
+         System.out.println("Initial SoC: " + simulator.getCurrentSoC()+"%");
+         simulator.charge(150);
+         System.out.println("Energy after charging: " + simulator.getCurrentEnergyMWh()+ "Mwh");
+         System.out.println("SoC after charging: " + simulator.getCurrentSoC()+ "%");
+        simulator.discharge(100);
+        System.out.println("Energy after discharging: " + simulator.getCurrentEnergyMWh()+ "Mwh");
+        System.out.println("SoC after discharging: " + simulator.getCurrentSoC()+ "%");
+        double energyBeforePausing= simulator.getCurrentEnergyMWh();
+        simulator.idle();
+        System.out.println("The energy before pause is: " + energyBeforePausing+ "MWh");
+        System.out.println("The energy after pause is: " + simulator.getCurrentEnergyMWh() + "MWh");
+        System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
         System.out.println( "Max charging power:"+ battery.getMaxChargeMW()+ "MW");
         System.out.println( "Max discharging power:"+ battery.getMaxDischargeMW()+ "MW");
         System.out.println( "SoC limits:"+ battery.getMinSoC()+ "% and "+ battery.getMaxSoC()+ "%");
