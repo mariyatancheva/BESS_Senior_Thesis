@@ -34,10 +34,12 @@ public class BatterySimulator {
         }
         double intervalDurationHours=0.25;
         double removedEnergyMWh= powerMW*intervalDurationHours/ specification.getDischargeEfficiency();
-        if(currentEnergyMWh-removedEnergyMWh < specification.getMinEnergyMWh()){
-            throw new IllegalArgumentException("Discharging will reduce State of Charge below the minimum. ");
+        double newEnergyMWh= currentEnergyMWh-removedEnergyMWh;
+        if(newEnergyMWh< specification.getMinEnergyMWh()-Energy_tolerance)
+        {
+            throw new IllegalArgumentException("Discharging will leave less than the minimum allowed stored energy. ");
         }
-        currentEnergyMWh=currentEnergyMWh-removedEnergyMWh;
+        currentEnergyMWh=Math.max(newEnergyMWh, specification.getMinEnergyMWh());
     }
     public void idle(){
 
@@ -48,7 +50,7 @@ public class BatterySimulator {
         double powerToReachMaximumMW= remainingCapacity/(intervalDurationHours* specification.getChargeEfficiency());
         return Math.min(specification.getMaxChargeMW(), powerToReachMaximumMW);
     }
-    public double getAvailableDisChargePowerMW(){
+    public double getAvailableDischargePowerMW(){
         double intervalDurationHours=0.25;
         double availableCapacity=currentEnergyMWh-specification.getMinEnergyMWh();
         double powerToReachMinimumMW= availableCapacity* specification.getChargeEfficiency()/intervalDurationHours;
