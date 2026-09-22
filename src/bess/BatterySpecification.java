@@ -43,7 +43,16 @@ public class BatterySpecification {
                     "Maximum state of charge must be between 0 and 100 and greater than Minimum state of charge"
             );
         }
-
+        if(!Double.isFinite(chargeEfficiency)|| chargeEfficiency<=0 || chargeEfficiency>1 ) {
+            throw new IllegalArgumentException(
+                    "Charging efficency must be between 0 and 1"
+            );
+        }
+        if(!Double.isFinite(dischargeEfficiency)|| dischargeEfficiency<=0 || dischargeEfficiency>1 ) {
+            throw new IllegalArgumentException(
+                    "Discharging efficency must be between 0 and 1"
+            );
+        }
 
         this.batteryCapacityMWh=batteryCapacityMWh;
         this.maxChargeMW=maxChargeMW;
@@ -52,6 +61,27 @@ public class BatterySpecification {
         this.maxSoC=maxSoC;
         this.chargeEfficiency=chargeEfficiency;
         this.dischargeEfficiency=dischargeEfficiency;
+    }
+    public double getBatteryCapacityMWh() {
+        return batteryCapacityMWh;
+    }
+    public double getMaxChargeMW(){
+        return maxChargeMW;
+    }
+    public double getMaxDischargeMW(){
+        return maxDischargeMW;
+    }
+    public double getMinSoC(){
+        return minSoC;
+    }
+    public double getMaxSoC(){
+        return maxSoC;
+    }
+    public double getChargeEfficiency(){
+        return chargeEfficiency;
+    }
+    public double getDischargeEfficiency(){
+        return dischargeEfficiency;
     }
 }
 
