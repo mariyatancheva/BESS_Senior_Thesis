@@ -18,10 +18,32 @@ public class BatterySpecification {
             double chargeEfficiency,
             double dischargeEfficiency){
 
-        if(!Double.isFinite(batteryCapacityMWh) || batteryCapacityMWh<=0)
+        if(!Double.isFinite(batteryCapacityMWh) || batteryCapacityMWh<=0) {
             throw new IllegalArgumentException(
                     "Battery capacity must be a postitve, finite number"
             );
+        }
+        if(!Double.isFinite(maxChargeMW)|| maxChargeMW<=0){
+            throw new IllegalArgumentException(
+                    "The charging power must be a positive, finite number"
+            );
+        }
+        if(!Double.isFinite(maxDischargeMW)|| maxDischargeMW <=0){
+            throw new IllegalArgumentException(
+                    "The dicharging power must be a positive, finite number"
+            );
+        }
+        if(!Double.isFinite(minSoC)|| minSoC<0 || minSoC>=100) {
+            throw new IllegalArgumentException(
+                    "Minimum state of charge must be between 0 and 100"
+            );
+        }
+        if(!Double.isFinite(maxSoC)|| maxSoC>100 || maxSoC<0 || maxSoC<=minSoC) {
+            throw new IllegalArgumentException(
+                    "Maximum state of charge must be between 0 and 100 and greater than Minimum state of charge"
+            );
+        }
+
 
         this.batteryCapacityMWh=batteryCapacityMWh;
         this.maxChargeMW=maxChargeMW;
