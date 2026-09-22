@@ -36,6 +36,7 @@ public class Main {
         simulator.idle();
         System.out.println("The energy before pause is: " + energyBeforePausing+ "MWh");
         System.out.println("The energy after pause is: " + simulator.getCurrentEnergyMWh() + "MWh");
+        System.out.println("Available charging power is: " + simulator.getAvailableChargePowerMW()+"MW");
         System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
         System.out.println( "Max charging power:"+ battery.getMaxChargeMW()+ "MW");
         System.out.println( "Max discharging power:"+ battery.getMaxDischargeMW()+ "MW");

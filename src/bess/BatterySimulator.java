@@ -37,4 +37,10 @@ public class BatterySimulator {
     public void idle(){
 
     }
+    public double getAvailableChargePowerMW(){
+        double intervalDurationHours=0.25;
+        double remainingCapacity=specification.getMaxEnergyMWh()- currentEnergyMWh;
+        double powerToReachMaximumMW= remainingCapacity/(intervalDurationHours* specification.getChargeEfficiency());
+        return Math.min(specification.getMaxChargeMW(), powerToReachMaximumMW);
+    }
 }
