@@ -20,7 +20,7 @@ public class BatterySpecification {
 
         if(!Double.isFinite(batteryCapacityMWh) || batteryCapacityMWh<=0) {
             throw new IllegalArgumentException(
-                    "Battery capacity must be a postitve, finite number"
+                    "Battery capacity must be a posititve, finite number"
             );
         }
         if(!Double.isFinite(maxChargeMW)|| maxChargeMW<=0){
@@ -82,6 +82,15 @@ public class BatterySpecification {
     }
     public double getDischargeEfficiency(){
         return dischargeEfficiency;
+    }
+    public double getMinEnergyMWh(){
+        return batteryCapacityMWh*minSoC/100.0;
+    }
+    public double getMaxEnergyMWh(){
+        return batteryCapacityMWh*maxSoC/100.0;
+    }
+    public double getUsableEnergyMWh(){
+        return getMaxEnergyMWh()- getMinEnergyMWh();
     }
 }
 
