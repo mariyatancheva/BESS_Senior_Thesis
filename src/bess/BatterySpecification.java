@@ -40,7 +40,7 @@ public class BatterySpecification {
         }
         if(!Double.isFinite(maxSoC)|| maxSoC>100 || maxSoC<0 || maxSoC<=minSoC) {
             throw new IllegalArgumentException(
-                    "Maximum state of charge must be between 0 and 100 and greater than Minimum state of charge"
+                    "Maximum state of charge must be between 0 and 100 and greater than the Minimum state of charge"
             );
         }
         if(!Double.isFinite(chargeEfficiency)|| chargeEfficiency<=0 || chargeEfficiency>1 ) {
