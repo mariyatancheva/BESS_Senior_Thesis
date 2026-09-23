@@ -23,6 +23,19 @@ public class Main {
 
 
          );
+         BatterySimulator cycle = new BatterySimulator(battery);
+         for(int interval=0; interval<1000;interval++){
+             double powerMW= cycle.getAvailableChargePowerMW();
+             if (powerMW<1e-6){break;}
+             cycle.charge(powerMW);
+         }
+         System.out.println("SoC after full charge" + cycle.getCurrentSoC() + "%");
+         for(int interval=0; interval<1000;interval++){
+             double powerMW= cycle.getAvailableDischargePowerMW();
+             if (powerMW<1e-6){break;}
+             cycle.discharge(powerMW);
+         }
+         System.out.println("SoC after full discharge is: " + cycle.getCurrentSoC()+ "%");
          BatterySimulator simulator= new BatterySimulator(battery);
          System.out.println("Initial energy: " + simulator.getCurrentEnergyMWh()+"MWh");
          System.out.println("Initial SoC: " + simulator.getCurrentSoC()+"%");
