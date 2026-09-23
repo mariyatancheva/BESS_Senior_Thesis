@@ -1,6 +1,8 @@
 package bess;
+import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Scanner;
-
 public class Main {
     public static void main(String[] args){
         Scanner scanner= new Scanner(System.in);
@@ -20,7 +22,6 @@ public class Main {
                  99,
                  Math.sqrt(0.9),
                  Math.sqrt(0.9)
-
 
          );
 
@@ -72,6 +73,12 @@ public class Main {
         } catch(IllegalArgumentException exception){
             System.out.println("Discharge is rejected: "+ exception.getMessage());
         }
+        ZonedDateTime start=LocalDateTime.of(2026,1,15,10,0).atZone(ZoneId.of("Europe/Berlin"));
+        PriceInterval priceInterval= new PriceInterval(start,80.0);
+        System.out.println("Start: "+ priceInterval.getStartTime());
+        System.out.println("End: "+ priceInterval.getStartTime());
+        System.out.println("Price: "+priceInterval.getPricePerMWh()+ "EUR/MWh");
+
 
 
 
