@@ -23,19 +23,12 @@ public class Main {
 
 
          );
-         BatterySimulator cycle = new BatterySimulator(battery);
-         for(int interval=0; interval<1000;interval++){
-             double powerMW= cycle.getAvailableChargePowerMW();
-             if (powerMW<1e-6){break;}
-             cycle.charge(powerMW);
-         }
-         System.out.println("SoC after full charge" + cycle.getCurrentSoC() + "%");
-         for(int interval=0; interval<1000;interval++){
-             double powerMW= cycle.getAvailableDischargePowerMW();
-             if (powerMW<1e-6){break;}
-             cycle.discharge(powerMW);
-         }
-         System.out.println("SoC after full discharge is: " + cycle.getCurrentSoC()+ "%");
+
+        System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
+        System.out.println( "Max charging power:"+ battery.getMaxChargeMW()+ "MW");
+        System.out.println( "Max discharging power:"+ battery.getMaxDischargeMW()+ "MW");
+        System.out.println( "SoC limits:"+ battery.getMinSoC()+ "% and "+ battery.getMaxSoC()+ "%");
+        System.out.println( "Usable energy within SoC boundaries:"+ battery.getUsableEnergyMWh()+ "MWh");
          BatterySimulator simulator= new BatterySimulator(battery);
          System.out.println("Initial energy: " + simulator.getCurrentEnergyMWh()+"MWh");
          System.out.println("Initial SoC: " + simulator.getCurrentSoC()+"%");
@@ -50,11 +43,29 @@ public class Main {
         System.out.println("The energy before pause is: " + energyBeforePausing+ "MWh");
         System.out.println("The energy after pause is: " + simulator.getCurrentEnergyMWh() + "MWh");
         System.out.println("Available charging power is: " + simulator.getAvailableChargePowerMW()+"MW");
-        System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
-        System.out.println( "Max charging power:"+ battery.getMaxChargeMW()+ "MW");
-        System.out.println( "Max discharging power:"+ battery.getMaxDischargeMW()+ "MW");
-        System.out.println( "SoC limits:"+ battery.getMinSoC()+ "% and "+ battery.getMaxSoC()+ "%");
-        System.out.println( "Usable energy within SoC boundaries:"+ battery.getUsableEnergyMWh()+ "MWh");
+        BatterySimulator cycle = new BatterySimulator(battery);
+        for(int interval=0; interval<1000;interval++){
+            double powerMW= cycle.getAvailableChargePowerMW();
+            if (powerMW<1e-6){break;}
+            cycle.charge(powerMW);
+        }
+        System.out.println("SoC after full charge" + cycle.getCurrentSoC() + "%");
+        for(int interval=0; interval<1000;interval++){
+            double powerMW= cycle.getAvailableDischargePowerMW();
+            if (powerMW<1e-6){break;}
+            cycle.discharge(powerMW);
+        }
+        System.out.println("SoC after full discharge is: " + cycle.getCurrentSoC()+ "%");
+
+        BatterySimulator limit=new BatterySimulator(battery);
+        double energy=limit.getCurrentEnergyMWh();
+        try{
+            limit.discharge(150);
+            System.out.println("The system should have rejected the discharge");
+        } catch(IllegalArgumentException exception){
+            System.out.println("Discharge is rejected: "+ exception.getMessage());
+        }
+
 
 
     }
