@@ -50,6 +50,14 @@ public class Main {
             cycle.charge(powerMW);
         }
         System.out.println("SoC after full charge" + cycle.getCurrentSoC() + "%");
+        BatterySimulator limit=new BatterySimulator(battery);
+        double energyBeforeRejectedCharge=cycle.getCurrentEnergyMWh();
+        try{
+            cycle.charge(150);
+            System.out.println("The system should have rejected the charge");
+        } catch(IllegalArgumentException exception){
+            System.out.println("Charge is rejected: "+ exception.getMessage());
+        }
         for(int interval=0; interval<1000;interval++){
             double powerMW= cycle.getAvailableDischargePowerMW();
             if (powerMW<1e-6){break;}
@@ -57,14 +65,14 @@ public class Main {
         }
         System.out.println("SoC after full discharge is: " + cycle.getCurrentSoC()+ "%");
 
-        BatterySimulator limit=new BatterySimulator(battery);
-        double energy=limit.getCurrentEnergyMWh();
+        double energyBeforeRejectedDischarge=limit.getCurrentEnergyMWh();
         try{
             limit.discharge(150);
             System.out.println("The system should have rejected the discharge");
         } catch(IllegalArgumentException exception){
             System.out.println("Discharge is rejected: "+ exception.getMessage());
         }
+
 
 
 
