@@ -25,7 +25,7 @@ public class BatterySimulator {
         if(newEnergyMWh> specification.getMaxEnergyMWh()+Energy_tolerance){
             throw new IllegalArgumentException("Charging will exceed maximum allowed stored energy.");
         }
-        currentEnergyMWh=Math.min(newEnergyMWh, specification.getMaxChargeMW());
+        currentEnergyMWh=Math.min(newEnergyMWh, specification.getMaxEnergyMWh());
     }
 
     public void discharge(double powerMW){
@@ -53,7 +53,7 @@ public class BatterySimulator {
     public double getAvailableDischargePowerMW(){
         double intervalDurationHours=0.25;
         double availableCapacity=currentEnergyMWh-specification.getMinEnergyMWh();
-        double powerToReachMinimumMW= availableCapacity* specification.getChargeEfficiency()/intervalDurationHours;
-        return Math.max(specification.getMaxChargeMW(), powerToReachMinimumMW);
+        double powerToReachMinimumMW= availableCapacity* specification.getDischargeEfficiency()/intervalDurationHours;
+        return Math.min(specification.getMaxDischargeMW(), powerToReachMinimumMW);
     }
 }
