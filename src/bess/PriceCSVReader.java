@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PriceCSVReader {
-    private static final ZoneId hour_zone=ZoneId.of("Europe/Berlin");
+    private static final ZoneId timeZone=ZoneId.of("Europe/Berlin");
     private static final DateTimeFormatter dataFormat= DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm:ss");
     public PriceInterval parseLine(String line){
         String[] columns =line.split(";" ,-1);
@@ -23,8 +23,8 @@ public class PriceCSVReader {
         if(dates.length!=2){
             throw new IllegalArgumentException("This interval must have only start and end interval");
         }
-        ZonedDateTime start= LocalDateTime.parse(dates[0].trim(),dataFormat).atZone(hour_zone);
-        ZonedDateTime end= LocalDateTime.parse(dates[1].trim(),dataFormat).atZone(hour_zone);
+        ZonedDateTime start= LocalDateTime.parse(dates[0].trim(),dataFormat).atZone(timeZone);
+        ZonedDateTime end= LocalDateTime.parse(dates[1].trim(),dataFormat).atZone(timeZone);
         if(!end.equals(start.plusMinutes(15))){
             throw new IllegalArgumentException("The interval must las 15minutes.");
         }
@@ -33,32 +33,32 @@ public class PriceCSVReader {
     }
     public List<PriceInterval> readPrices(Path pathFile) throws IOException{
         List<String> lines=Files.readAllLines(pathFile, StandardCharsets.UTF_8);
-        List<PriceInterval> prices=new ArrayList<>();
+        List<PriceInterval> datesAndPrices=new ArrayList<>();
 
         for(int i=0;i<lines.size();i++){
             String line= lines.get(i);
             if(i==0 && line.startsWith("\uFEFF")){
             line=line.substring(1);}
             if(line.isBlank()){
-                PriceInterval previousLine = prices.get(prices.size()-1);
+                PriceInterval previousLine = datesAndPrices.get(datesAndPrices.size()-1);
                 throw new IllegalArgumentException(String.format("There is empty row after" + previousLine.getStartTime().format(dataFormat)));
             }
             try {
-                PriceInterval interval = parseLine(line);
-                prices.add(interval);
+                    PriceInterval interval = parseLine(line);
+                    datesAndPrices.add(interval);
             } catch(IllegalArgumentException exception){
-                PriceInterval prevLine = prices.get(prices.size()-1);
+                PriceInterval prevLine = datesAndPrices.get(datesAndPrices.size()-1);
                 throw new IllegalArgumentException(String.format("There is an invalid row after"+ prevLine.getStartTime().format(dataFormat),exception));
             }
             catch (java.time.DateTimeException exception){
-                PriceInterval preLine=prices.get(prices.size()-1);
+                PriceInterval preLine=datesAndPrices.get(datesAndPrices.size()-1);
                 throw new IllegalArgumentException(String.format("There is invalid date or time after this line"+ preLine.getStartTime().format(dataFormat),exception));
             }
         }
-        if (prices.isEmpty()){
+        if (datesAndPrices.isEmpty()){
             throw new IllegalArgumentException("The price list/csv file is empty.");
         }
-        return prices;
+        return datesAndPrices;
 
 
     }

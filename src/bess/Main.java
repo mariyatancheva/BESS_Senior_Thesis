@@ -3,7 +3,9 @@ import java.time.ZoneId;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Scanner;
-
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 public class Main {
     public static void main(String[] args){
         Scanner scanner= new Scanner(System.in);
@@ -79,6 +81,22 @@ public class Main {
         System.out.println("Start: "+ priceInterval.getStartTime());
         System.out.println("End: "+ priceInterval.getStartTime());
         System.out.println("Price: "+priceInterval.getPricePerMWh()+ "EUR/MWh");
+
+        PriceCSVReader reader= new PriceCSVReader();
+        try{
+            List<PriceInterval> datesAndPrices= reader.readPrices(Path.of("data/prices.csv"));
+            System.out.println("Loaded intervals: "+ datesAndPrices.size());
+            PriceInterval first=datesAndPrices.get(0);
+            PriceInterval last= datesAndPrices.get(datesAndPrices.size());
+            System.out.println("First interval starts at: "+first.getStartTime());
+            System.out.println("First price is: "+first.getStartTime()+"Eur/MWh");
+            System.out.println("Last interval starts at: "+last.getEndTime());
+            System.out.println("First price is: "+last.getStartTime()+"Eur/MWh");
+
+        } catch (IOException exception){
+            System.out.println("The file could not be read."+ exception.getMessage());
+        }
+
 
 
 
