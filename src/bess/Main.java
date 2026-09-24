@@ -29,7 +29,7 @@ public class Main {
 
          );
 
-        System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
+         System.out.println( "Battery capacity:"+ battery.getBatteryCapacityMWh()+ "MWh");
         System.out.println( "Max charging power:"+ battery.getMaxChargeMW()+ "MW");
         System.out.println( "Max discharging power:"+ battery.getMaxDischargeMW()+ "MW");
         System.out.println( "SoC limits:"+ battery.getMinSoC()+ "% and "+ battery.getMaxSoC()+ "%");
@@ -94,6 +94,28 @@ public class Main {
             System.out.println("First price is: "+first.getPricePerMWh()+"Eur/MWh");
             System.out.println("Last interval ends at: "+last.getEndTime().format(formatData));
             System.out.println("Last price is: "+last.getPricePerMWh()+"Eur/MWh");
+            BatterySimulator financialResult =new BatterySimulator(battery);
+            PriceInterval charging= datesAndPrices.get(0);
+            double chargingPower= financialResult.getAvailableChargePowerMW();
+            double durationInterval=0.25;
+            financialResult.charge(chargingPower);
+            double purchasedEnergy= chargingPower* durationInterval;
+            double costChargingEUR= purchasedEnergy*charging.getPricePerMWh();
+            System.out.println("Purchased energy: "+ purchasedEnergy+"MWh");
+            System.out.println("The cost of charging is: "+ costChargingEUR+"EUR");
+            System.out.println("The stored energy left : "+ financialResult.getCurrentEnergyMWh()+"MWh");
+            PriceInterval discharging=datesAndPrices.get(1);
+            double dischargingPower=financialResult.getAvailableDischargePowerMW();
+            financialResult.discharge((dischargingPower));
+            double soldEnergy=dischargingPower*durationInterval;
+            double revenueDischarginEUR= soldEnergy*discharging.getPricePerMWh();
+            double profit=revenueDischarginEUR-costChargingEUR;
+            System.out.println("Sold energy: "+ soldEnergy+"MWh");
+            System.out.println("Revenue is: "+ revenueDischarginEUR+"EUR");
+            System.out.println("The profit after trading window is : "+ profit+"EUR");
+            System.out.println("The final SOC is : "+ financialResult.getCurrentSoC()+"%");
+
+
 
         } catch (IOException exception){
             System.out.println("The file could not be read."+ exception.getMessage());
