@@ -1,5 +1,4 @@
 package bess;
-import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -41,23 +40,32 @@ public class PriceCSVReader {
             line=line.substring(1);}
             if(line.isBlank()){
                 PriceInterval previousLine = datesAndPrices.get(datesAndPrices.size()-1);
-                throw new IllegalArgumentException(String.format("There is empty row after" + previousLine.getStartTime().format(dataFormat)));
+                throw new IllegalArgumentException("There is empty row after" + previousLine.getStartTime().format(dataFormat));
             }
             try {
                     PriceInterval interval = parseLine(line);
+                    if(!datesAndPrices.isEmpty()) {
+                        PriceInterval previous = datesAndPrices.get(datesAndPrices.size() - 1);
+
+                        if (!interval.getStartTime().toInstant().equals(previous.getEndTime().toInstant())) {
+                            throw new IllegalArgumentException("There is a missing or repeated interval");
+                        }
+                    }
                     datesAndPrices.add(interval);
+
             } catch(IllegalArgumentException exception){
                 PriceInterval prevLine = datesAndPrices.get(datesAndPrices.size()-1);
-                throw new IllegalArgumentException(String.format("There is an invalid row after"+ prevLine.getStartTime().format(dataFormat),exception));
+                throw new IllegalArgumentException("There is an invalid row after"+ prevLine.getStartTime().format(dataFormat),exception);
             }
             catch (java.time.DateTimeException exception){
                 PriceInterval preLine=datesAndPrices.get(datesAndPrices.size()-1);
-                throw new IllegalArgumentException(String.format("There is invalid date or time after this line"+ preLine.getStartTime().format(dataFormat),exception));
+                throw new IllegalArgumentException("There is invalid date or time after this line"+ preLine.getStartTime().format(dataFormat),exception);
             }
         }
         if (datesAndPrices.isEmpty()){
             throw new IllegalArgumentException("The price list/csv file is empty.");
         }
+
         return datesAndPrices;
 
 
