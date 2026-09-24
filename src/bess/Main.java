@@ -2,6 +2,7 @@ package bess;
 import java.time.ZoneId;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -87,11 +88,12 @@ public class Main {
             List<PriceInterval> datesAndPrices= reader.readPrices(Path.of("data/prices.csv"));
             System.out.println("Loaded intervals: "+ datesAndPrices.size());
             PriceInterval first=datesAndPrices.get(0);
-            PriceInterval last= datesAndPrices.get(datesAndPrices.size());
-            System.out.println("First interval starts at: "+first.getStartTime());
-            System.out.println("First price is: "+first.getStartTime()+"Eur/MWh");
-            System.out.println("Last interval starts at: "+last.getEndTime());
-            System.out.println("First price is: "+last.getStartTime()+"Eur/MWh");
+            PriceInterval last= datesAndPrices.get(datesAndPrices.size()-1);
+            DateTimeFormatter formatData=DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm XXX '['VV']'");
+            System.out.println("First interval starts at: "+first.getStartTime().format(formatData));
+            System.out.println("First price is: "+first.getPricePerMWh()+"Eur/MWh");
+            System.out.println("Last interval ends at: "+last.getEndTime().format(formatData));
+            System.out.println("Last price is: "+last.getPricePerMWh()+"Eur/MWh");
 
         } catch (IOException exception){
             System.out.println("The file could not be read."+ exception.getMessage());
