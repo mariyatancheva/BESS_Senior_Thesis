@@ -62,13 +62,16 @@ public class BatterySpecification {
         this.chargeEfficiency=chargeEfficiency;
         this.dischargeEfficiency=dischargeEfficiency;
     }
-    public double getBatteryCapacityMWh() {
+    public double getBatteryCapacityMWh()
+    {
         return batteryCapacityMWh;
     }
-    public double getMaxChargeMW(){
+    public double getMaxChargeMW()
+    {
         return maxChargeMW;
     }
-    public double getMaxDischargeMW(){
+    public double getMaxDischargeMW()
+    {
         return maxDischargeMW;
     }
     public double getMinSoC(){

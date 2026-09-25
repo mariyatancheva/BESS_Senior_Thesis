@@ -7,6 +7,7 @@ import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.ArrayList;
 public class Main {
     public static void main(String[] args){
         Scanner scanner= new Scanner(System.in);
@@ -94,6 +95,7 @@ public class Main {
             System.out.println("First price is: "+first.getPricePerMWh()+"Eur/MWh");
             System.out.println("Last interval ends at: "+last.getEndTime().format(formatData));
             System.out.println("Last price is: "+last.getPricePerMWh()+"Eur/MWh");
+
             BatterySimulator financialResult =new BatterySimulator(battery);
             PriceInterval charging= datesAndPrices.get(0);
             double chargingPower= financialResult.getAvailableChargePowerMW();
@@ -108,12 +110,16 @@ public class Main {
             double dischargingPower=financialResult.getAvailableDischargePowerMW();
             financialResult.discharge((dischargingPower));
             double soldEnergy=dischargingPower*durationInterval;
-            double revenueDischarginEUR= soldEnergy*discharging.getPricePerMWh();
-            double profit=revenueDischarginEUR-costChargingEUR;
+            double revenueDischargingEUR= soldEnergy*discharging.getPricePerMWh();
+            double profit=revenueDischargingEUR-costChargingEUR;
             System.out.println("Sold energy: "+ soldEnergy+"MWh");
-            System.out.println("Revenue is: "+ revenueDischarginEUR+"EUR");
+            System.out.println("Revenue is: "+ revenueDischargingEUR+"EUR");
             System.out.println("The profit after trading window is : "+ profit+"EUR");
             System.out.println("The final SOC is : "+ financialResult.getCurrentSoC()+"%");
+
+            BatterySimulator scheduleTest= new BatterySimulator(battery);{
+                Schedule firstStepSchedule = new Schedule(datesAndPrices.get(0),action.CHARGE);
+            }
 
 
 

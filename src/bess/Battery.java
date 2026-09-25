@@ -1,7 +1,5 @@
 package bess;
 
 public enum Battery {
-    CHARGE,
-    DISCHARGE,
-    IDLE
+    CHARGE, DISCHARGE, IDLE
 }

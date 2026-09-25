@@ -56,4 +56,11 @@ public class BatterySimulator {
         double powerToReachMinimumMW= availableCapacity* specification.getDischargeEfficiency()/intervalDurationHours;
         return Math.min(specification.getMaxDischargeMW(), powerToReachMinimumMW);
     }
+    public void executeSchedule(Schedule step){
+        switch (step.getAction()){
+            case CHARGE -> charge(step.getPowerMW());
+            case DISCHARGE -> discharge(step.getPowerMW());
+            case IDLE -> idle();
+        }
+    }
 }

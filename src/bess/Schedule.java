@@ -17,7 +17,7 @@ public class Schedule {
             throw new IllegalArgumentException("Power must be zero during idle period.");
         }
         if (action != Battery.IDLE && powerMW == 0) {
-            throw new IllegalArgumentException(("Power cannot be 0 during charging and discharging."));
+            throw new IllegalArgumentException("Power cannot be 0 during charging and discharging.");
         }
     }
     public PriceInterval getPriceInterval(){

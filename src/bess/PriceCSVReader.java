@@ -63,7 +63,7 @@ public class PriceCSVReader {
             }
         }
         if (datesAndPrices.isEmpty()){
-            throw new IllegalArgumentException("The price list/csv file is empty.");
+            throw new IllegalArgumentException("The price and date list/csv file is empty.");
         }
 
         return datesAndPrices;
