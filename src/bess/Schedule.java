@@ -20,7 +20,7 @@ public class Schedule {
             throw new IllegalArgumentException("Power cannot be 0 during charging and discharging.");
         }
     }
-    public PriceInterval getPriceInterval(){
+        public PriceInterval getPriceInterval(){
             return priceInterval;
         }
         public Battery getAction(){

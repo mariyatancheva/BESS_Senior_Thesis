@@ -118,8 +118,16 @@ public class Main {
             System.out.println("The final SOC is : "+ financialResult.getCurrentSoC()+"%");
 
             BatterySimulator scheduleTest= new BatterySimulator(battery);{
-                Schedule firstStepSchedule = new Schedule(datesAndPrices.get(0),action.CHARGE);
+                List<Schedule> steps =new ArrayList<>();
+                double RTE= battery.getChargeEfficiency()* battery.getDischargeEfficiency();
+                double chargingPowerMW= Math.min(scheduleTest.getAvailableChargePowerMW(), battery.getMaxChargeMW()/RTE);
+                double dischargingPowerMW= chargingPowerMW/ battery.getDischargeEfficiency();
+                steps.add(new Schedule(datesAndPrices.get(0),Battery.CHARGE,chargingPowerMW));
+                steps.add(new Schedule(datesAndPrices.get(1),Battery.IDLE,0));
+                steps.add(new Schedule(datesAndPrices.get(2),Battery.DISCHARGE,dischargingPowerMW));
+
             }
+
 
 
 
