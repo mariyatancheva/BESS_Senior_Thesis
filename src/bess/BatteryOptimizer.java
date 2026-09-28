@@ -22,4 +22,30 @@ public class BatteryOptimizer {
         public int getNumOfStates(){
             return numOfStates;
         }
+        public double getRequiredPowerMW(int startState, int endState) {
+            double durationInterval = 0.25;
+            double startEnergyMWh = getEnergyPerState(startState);
+            double endEnergyMWh = getEnergyPerState(endState);
+            double differenceEnergyMWh = endEnergyMWh - startEnergyMWh;
+            if (differenceEnergyMWh > 0) {
+                return differenceEnergyMWh / (durationInterval * specification.getChargeEfficiency());
+            }
+            if (differenceEnergyMWh < 0) {
+                return (-differenceEnergyMWh)/(durationInterval * specification.getChargeEfficiency());
+
+            }
+            return 0;
+        }
+        public boolean isTransitionToNewStateIsAllowed(int startState, int endState){
+            double requiredPowerMW= getRequiredPowerMW(startState,endState );
+            if(endState>startState){
+                return requiredPowerMW<= specification.getMaxChargeMW();
+            }
+            else if(endState<startState){
+                return requiredPowerMW<= specification.getMaxDischargeMW();
+            }
+            else {
+                return true;
+            }
+        }
 }
