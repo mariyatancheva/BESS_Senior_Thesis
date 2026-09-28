@@ -121,10 +121,13 @@ public class Main {
                 List<Schedule> steps =new ArrayList<>();
                 double RTE= battery.getChargeEfficiency()* battery.getDischargeEfficiency();
                 double chargingPowerMW= Math.min(scheduleTest.getAvailableChargePowerMW(), battery.getMaxChargeMW()/RTE);
-                double dischargingPowerMW= chargingPowerMW/ battery.getDischargeEfficiency();
+                double dischargingPowerMW= chargingPowerMW* battery.getDischargeEfficiency();
                 steps.add(new Schedule(datesAndPrices.get(0),Battery.CHARGE,chargingPowerMW));
                 steps.add(new Schedule(datesAndPrices.get(1),Battery.IDLE,0));
                 steps.add(new Schedule(datesAndPrices.get(2),Battery.DISCHARGE,dischargingPowerMW));
+                for(Schedule step: steps){
+                    System.out.println("The battery:"+step.getAction()+"| with Power:" + step.getPowerMW()+ "| SoC: "+scheduleTest.getCurrentSoC()+ "%");
+                }
 
             }
 
