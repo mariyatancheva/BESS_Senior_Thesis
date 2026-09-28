@@ -48,4 +48,23 @@ public class BatteryOptimizer {
                 return true;
             }
         }
+        public double getTransitionProfitEUR(int startState, int endState, double pricePerMWh){
+            if (!Double.isFinite(pricePerMWh)) {
+                throw new IllegalArgumentException("The price must be a finite number ");
+            }
+            if(!isTransitionToNewStateIsAllowed(startState,endState)){
+                throw new IllegalArgumentException("Transition exceeds power limits.");
+            }
+            double requiredPowerMW= getRequiredPowerMW(startState,endState);
+            double energyMWh= requiredPowerMW*0.25;
+            if(endState>startState){
+                return -energyMWh * pricePerMWh;
+            }
+            else if (endState<startState){
+                return energyMWh*pricePerMWh;
+            }else{
+                return 0;
+            }
+
+    }
 }
