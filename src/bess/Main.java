@@ -121,13 +121,30 @@ public class Main {
                 List<Schedule> steps =new ArrayList<>();
                 double RTE= battery.getChargeEfficiency()* battery.getDischargeEfficiency();
                 double chargingPowerMW= Math.min(scheduleTest.getAvailableChargePowerMW(), battery.getMaxChargeMW()/RTE);
-                double dischargingPowerMW= chargingPowerMW* battery.getDischargeEfficiency();
+                double dischargingPowerMW= chargingPowerMW* RTE;
                 steps.add(new Schedule(datesAndPrices.get(0),Battery.CHARGE,chargingPowerMW));
                 steps.add(new Schedule(datesAndPrices.get(1),Battery.IDLE,0));
                 steps.add(new Schedule(datesAndPrices.get(2),Battery.DISCHARGE,dischargingPowerMW));
+                double totalPurchasedEnergyCost=0;
+                double totalRevenue=0;
+                double intevalDuration=0.25;
+
                 for(Schedule step: steps){
+                    scheduleTest.executeSchedule(step);
+                    double energyMWh= step.getPowerMW()*intevalDuration;
+                    double pricePerMwh= step.getPriceInterval().getPricePerMWh();
+                    if(step.getAction()==Battery.CHARGE) {
+                        totalPurchasedEnergyCost+=energyMWh*pricePerMwh;
+                    } else if (step.getAction()==Battery.DISCHARGE) {
+                        totalRevenue+= energyMWh*pricePerMwh;
+                    }
                     System.out.println("The battery:"+step.getAction()+"| with Power:" + step.getPowerMW()+ "| SoC: "+scheduleTest.getCurrentSoC()+ "%");
                 }
+                double totalProfitEur= totalRevenue-totalPurchasedEnergyCost;
+                System.out.println("Total cost: "+ totalPurchasedEnergyCost +" EUR");
+                System.out.println("Total revenue: "+totalRevenue+" EUR");
+                System.out.println("Total profit: "+ totalProfitEur+" EUR");
+
 
             }
 
