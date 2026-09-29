@@ -30,8 +30,8 @@ public class BatteryOptimizer {
             if (differenceEnergyMWh > 0) {
                 return differenceEnergyMWh / (durationInterval * specification.getChargeEfficiency());
             }
-            if (differenceEnergyMWh < 0) {
-                return (-differenceEnergyMWh)/(durationInterval * specification.getChargeEfficiency());
+            else if (differenceEnergyMWh < 0) {
+                return ((-differenceEnergyMWh)* specification.getDischargeEfficiency())/durationInterval;
 
             }
             return 0;

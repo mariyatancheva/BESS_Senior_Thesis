@@ -147,6 +147,17 @@ public class Main {
 
 
             }
+            BatteryOptimizer optmizer=new BatteryOptimizer(battery); {
+                System.out.println("The number of states is: "+ optmizer.getNumOfStates());
+                System.out.println("Energy at state 0 is: "+ optmizer.getEnergyPerState(0));
+                System.out.println("The charging power from state 0 to 1 is: "+ optmizer.getRequiredPowerMW(0,1));
+                System.out.println("Discharging power from state 1 to 0 is: "+ optmizer.getRequiredPowerMW(1,0));
+                System.out.println("Transition from state 0 to state 5 is allowed: "+ optmizer.isTransitionToNewStateIsAllowed(0,5));
+                System.out.println("Financial result after charging at 100 EUR/MWh is: "+ optmizer.getTransitionProfitEUR(0,1,100));
+                System.out.println("Financial result after didcharging at 100 EUR/MWh is: "+ optmizer.getTransitionProfitEUR(1,0,100));
+                System.out.println("Financial result after idle perioid is: "+ optmizer.getTransitionProfitEUR(0,0,100));
+
+            }
 
 
 
@@ -158,7 +169,7 @@ public class Main {
 
 
 
-
-
     }
 }
+
+
