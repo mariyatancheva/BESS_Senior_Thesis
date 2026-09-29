@@ -95,7 +95,10 @@ public class BatteryOptimizer {
                             nextProfit[endState]=nonFinalProfit;
                         }
                 }
+
+
                 }
+                currentProfit=nextProfit;
             }
             return currentProfit[0];
         }
