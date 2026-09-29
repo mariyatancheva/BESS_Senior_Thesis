@@ -1,6 +1,8 @@
 package bess;
 
 import java.util.Objects;
+import java.util.Arrays;
+import java.util.List;
 
 public class BatteryOptimizer {
         private final BatterySpecification specification;
@@ -66,5 +68,35 @@ public class BatteryOptimizer {
                 return 0;
             }
 
-    }
+    } //optimization
+        public double maximumTradingprofit(List<PriceInterval> prices){
+            Objects.requireNonNull(prices,"Price list must not be null.");
+            if(prices.isEmpty()){
+                throw new IllegalArgumentException("The price list must not be empty.");
+            }
+            double[] currentProfit= new double[numOfStates];
+            Arrays.fill(currentProfit,Double.NEGATIVE_INFINITY);
+            currentProfit[0]=0;
+            for(PriceInterval interval: prices){
+                double [] nextProfit= new double[numOfStates];
+                Arrays.fill(nextProfit,Double.NEGATIVE_INFINITY);
+
+                for(int startState=0; startState< numOfStates;startState++){
+                    if (currentProfit[startState]==Double.NEGATIVE_INFINITY) {
+                        continue;
+                    }
+                for(int endState=0;endState<numOfStates;endState++) {
+                    if (!isTransitionToNewStateIsAllowed(startState, endState)) {
+                        continue;
+                    }
+                        double transitionProfit = getTransitionProfitEUR(startState, endState, interval.getPricePerMWh());
+                        double nonFinalProfit = currentProfit[startState] + transitionProfit;
+                        if(nonFinalProfit>nextProfit[endState]){
+                            nextProfit[endState]=nonFinalProfit;
+                        }
+                }
+                }
+            }
+            return currentProfit[0];
+        }
 }
