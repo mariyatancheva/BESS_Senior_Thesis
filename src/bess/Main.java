@@ -165,6 +165,7 @@ public class Main {
                {
                    System.out.println("Time:"+ step.getPriceInterval().getStartTime()+" Action:"+step.getAction()+" Power: "+ step.getPowerMW());
                }
+
                 BatterySimulator validatingResultDP= new BatterySimulator(battery);
                 double simulatedProfitEUR=0;
                 double intervalDuration=0.25;
@@ -187,6 +188,19 @@ public class Main {
                     else {
                         System.out.println("The test is not passed.");
                     }
+
+                    List<PriceInterval> equalPrices=List.of(new PriceInterval(startTest,100),new PriceInterval(startTest.plusMinutes(15),100));
+                    BatteryOptimizationResult equalResult=optimizer.maximumTradingprofit(equalPrices);
+                    System.out.println("Profit with equal prices"+ equalResult.getProfitEUR()+"EUR");
+                    for (Schedule step: equalResult.getSteps() ){
+                        System.out.println("Action is: "+ step.getAction()+ " Power is : "+ step.getPowerMW()+"MW");
+                    }
+                List<PriceInterval> decreasingPrices=List.of(new PriceInterval(startTest,100),new PriceInterval(startTest.plusMinutes(15),80));
+                BatteryOptimizationResult decreasingResult=optimizer.maximumTradingprofit(decreasingPrices);
+                System.out.println("Profit with decreasing prices"+ decreasingResult.getProfitEUR()+"EUR");
+                for (Schedule step: decreasingResult.getSteps() ){
+                    System.out.println("Action is: "+ step.getAction()+ " Power is : "+ step.getPowerMW()+"MW");
+                }
 
 
             }
