@@ -201,6 +201,34 @@ public class Main {
                 for (Schedule step: decreasingResult.getSteps() ){
                     System.out.println("Action is: "+ step.getAction()+ " Power is : "+ step.getPowerMW()+"MW");
                 }
+                List<PriceInterval> negativePrices=List.of(new PriceInterval(startTest,-50),new PriceInterval(startTest.plusMinutes(15),80));
+                BatteryOptimizationResult negativeResult=optimizer.maximumTradingprofit(negativePrices);
+                System.out.println("Profit with negativee prices"+ negativeResult.getProfitEUR()+"EUR");
+                for (Schedule step: negativeResult.getSteps() ){
+                    System.out.println("Action is: "+ step.getAction()+ " Power is : "+ step.getPowerMW()+"MW");
+                }
+
+                BatteryOptimizationResult csvResult=optimizer.maximumTradingprofit(datesAndPrices);
+                System.out.println("Optimized profit for the CSV data is "+ csvResult.getProfitEUR()+ "EUR");
+                System.out.println("Number of cheduled steps: "+ csvResult.getSteps().size());
+
+                BatterySimulator csvSimulator= new BatterySimulator(battery);
+                double csvSimulatorProfit=0;
+                for(Schedule step: csvResult.getSteps()){
+                    csvSimulator.executeSchedule(step);
+                    double energyGridMWh=step.getPowerMW()*durationInterval;
+                    double price =step.getPriceInterval().getPricePerMWh();
+
+                    if (step.getAction()==Battery.CHARGE){
+                        csvSimulatorProfit-=price*energyGridMWh;
+                    }
+                    else if (step.getAction()==Battery.DISCHARGE){
+                        csvSimulatorProfit+=price*energyGridMWh;
+                    }
+                }
+                System.out.println("The profit of the CSV matches: "+ (Math.abs(csvSimulatorProfit-csvResult.getProfitEUR())<1e-6));
+                System.out.println("CSV final energy matches minimum: "+ (Math.abs(csvSimulator.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
+
 
 
             }
