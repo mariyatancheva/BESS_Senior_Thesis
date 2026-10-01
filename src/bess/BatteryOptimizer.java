@@ -73,7 +73,7 @@ public class BatteryOptimizer {
 
     } //optimization
 
-    public double maximumTradingprofit(List<PriceInterval> prices) {
+    public BatteryOptimizationResult maximumTradingprofit(List<PriceInterval> prices) {
         Objects.requireNonNull(prices, "Price list must not be null.");
         if (prices.isEmpty()) {
             throw new IllegalArgumentException("The price list must not be empty.");
@@ -112,8 +112,32 @@ public class BatteryOptimizer {
             }
             profitAtTheBeginningOfTheInterval = profitAtTheEndOfTheInterval;
         }
-        return profitAtTheBeginningOfTheInterval[0];
+        List<Schedule> steps=new ArrayList<>();
+        int endState=0;
+        for(int intervalIndex=prices.size()-1;intervalIndex>=0;intervalIndex--){
+            int startState=previousStates[intervalIndex][endState];
+            if(startState==-1){
+                throw new IllegalArgumentException("The schedule cannot be reconstructed, there is no recorded transition");
+            }
+            Battery action;
+            if(endState>startState){
+                action=Battery.CHARGE;
+            }
+            else if (startState<endState){
+                action=Battery.DISCHARGE;
+            }
+            else{
+                action=Battery.IDLE;
+            }
+            double powerMW=getRequiredPowerMW(startState,endState);
+            steps.add(new Schedule(prices.get(intervalIndex),action,powerMW));
+            endState=startState;
+
+        }
+        Collections.reverse(steps);
+        return new BatteryOptimizationResult(profitAtTheBeginningOfTheInterval[0],steps);
     }
+
 }
 
 

@@ -159,8 +159,12 @@ public class Main {
 
                 ZonedDateTime startTest=LocalDateTime.of(2026,1,1,0,0).atZone(ZoneId.of("Europe/Berlin"));
                 List<PriceInterval> profits=List.of(new PriceInterval(startTest,50), new PriceInterval(startTest.plusMinutes(15),100));
-                double result= optimizer.maximumTradingprofit(profits);
-                System.out.println("The result is:"+ result+ "EUR");
+               BatteryOptimizationResult result = optimizer.maximumTradingprofit(profits);
+               System.out.println("The financial result is: "+result.getProfitEUR()+"EUR");
+               for(Schedule step: result.getSteps())
+               {
+                   System.out.println("Time:"+ step.getPriceInterval().getStartTime()+"Action:"+step.getAction()+"Power: "+ step.getPowerMW());
+               }
 
             }
 
