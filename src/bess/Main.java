@@ -163,13 +163,33 @@ public class Main {
                System.out.println("The financial result is: "+result.getProfitEUR()+"EUR");
                for(Schedule step: result.getSteps())
                {
-                   System.out.println("Time:"+ step.getPriceInterval().getStartTime()+"Action:"+step.getAction()+"Power: "+ step.getPowerMW());
+                   System.out.println("Time:"+ step.getPriceInterval().getStartTime()+" Action:"+step.getAction()+" Power: "+ step.getPowerMW());
                }
+                BatterySimulator validatingResultDP= new BatterySimulator(battery);
+                double simulatedProfitEUR=0;
+                double intervalDuration=0.25;
+                for(Schedule step: result.getSteps()) {
+                    validatingResultDP.executeSchedule(step);
+                    double gridEnergy = step.getPowerMW() * intervalDuration;
+                    double price = step.getPriceInterval().getPricePerMWh();
+                    if (step.getAction() == Battery.CHARGE) {
+                        simulatedProfitEUR -= gridEnergy * price;
+                    } else if (step.getAction() == Battery.DISCHARGE) {
+                        simulatedProfitEUR += gridEnergy * price;
+                    }
+                    System.out.println("Action: " + step.getAction() + " State of Charge after: " + validatingResultDP.getCurrentSoC() + "%");
+
+                }
+                double tolerance = 1e-6;
+                    if(Math.abs(simulatedProfitEUR- result.getProfitEUR())<tolerance) {
+                        System.out.println("The optimizer result matches the validation -pass.");
+                    }
+                    else {
+                        System.out.println("The test is not passed.");
+                    }
+
 
             }
-
-
-
 
         } catch (IOException exception){
             System.out.println("The file could not be read."+ exception.getMessage());

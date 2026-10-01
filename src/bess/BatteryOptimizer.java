@@ -123,7 +123,7 @@ public class BatteryOptimizer {
             if(endState>startState){
                 action=Battery.CHARGE;
             }
-            else if (startState<endState){
+            else if (startState>endState){
                 action=Battery.DISCHARGE;
             }
             else{
