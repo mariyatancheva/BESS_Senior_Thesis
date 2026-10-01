@@ -20,7 +20,7 @@ public class BatteryOptimizer {
 
     public double getEnergyPerState(int stateIndex) {
         if (stateIndex < 0 || stateIndex >= numOfStates) {
-            System.out.println("State index must be valid number.");
+            throw new IllegalArgumentException("State index must be in thee allowed range(between 0 and" + (numOfStates-1)+ ".");
         }
         return specification.getMinEnergyMWh() + stateIndex * energyStepMWh;
     }
@@ -71,7 +71,38 @@ public class BatteryOptimizer {
             return 0;
         }
 
-    } //optimization
+    }
+    private Cycle getNextPhaseCycle(Cycle currentPhase, int startState, int endState) {
+        Objects.requireNonNull(currentPhase, "Cycle Phase must not bee null.");
+
+        if (currentPhase == Cycle.WAITING) {
+            if (startState != 0) {
+                return null;
+            }
+            if (endState == 0) {
+                return Cycle.WAITING;
+            }
+            return Cycle.CHARGING;
+
+        }
+        if (currentPhase == Cycle.CHARGING) {
+            if (endState > startState) {
+                return Cycle.CHARGING;
+            }
+            if (endState == 0) {
+                return Cycle.WAITING;
+            }
+            return Cycle.DISCHARGING;
+        }
+        if (endState>startState){
+            return null;
+        }
+        if (endState==0){
+            return Cycle.WAITING;
+        }
+        return Cycle.DISCHARGING;
+    }
+    //optimization
 
     public BatteryOptimizationResult maximumTradingprofit(List<PriceInterval> prices) {
         Objects.requireNonNull(prices, "Price list must not be null.");
