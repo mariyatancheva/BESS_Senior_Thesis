@@ -229,8 +229,18 @@ public class Main {
                 System.out.println("The profit of the CSV matches: "+ (Math.abs(csvSimulatorProfit-csvResult.getProfitEUR())<1e-6));
                 System.out.println("CSV final energy matches minimum: "+ (Math.abs(csvSimulator.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
 
+                List<PriceInterval> firstDayprices=datesAndPrices.subList(0,96);
+                BatteryOptimizationResult fullCycleResult=optimizer.oneFullCycle(firstDayprices);
+                System.out.println("Profit with one full cycle is:"+fullCycleResult.getProfitEUR()+"EUR");
+                BatterySimulator check= new BatterySimulator(battery);
+                double maxEnergy=check.getCurrentEnergyMWh();
 
-
+                for(Schedule step: fullCycleResult.getSteps()){
+                    check.executeSchedule(step);
+                    maxEnergy=Math.max(maxEnergy,check.getCurrentEnergyMWh());
+                }
+                System.out.println("Reached maximum: "+(Math.abs(maxEnergy-battery.getMaxEnergyMWh())<1e-6));
+                System.out.println("Returned to min: "+(Math.abs(check.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
             }
 
         } catch (IOException exception){
