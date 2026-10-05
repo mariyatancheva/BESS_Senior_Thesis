@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
+import java.time.LocalDate;
+
 public class Main {
     public static void main(String[] args){
         Scanner scanner= new Scanner(System.in);
@@ -229,6 +231,22 @@ public class Main {
                 System.out.println("The profit of the CSV matches: "+ (Math.abs(csvSimulatorProfit-csvResult.getProfitEUR())<1e-6));
                 System.out.println("CSV final energy matches minimum: "+ (Math.abs(csvSimulator.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
 
+                LocalDate selectedDate;
+                while(true){
+                    try{
+                        System.out.print("Enter a year: ");
+                        int year= Integer.parseInt(scanner.next());
+                        System.out.print("Enter a month (1-12): ");
+                        int month= Integer.parseInt(scanner.next());
+                        System.out.print("Enter a day (1-31): ");
+                        int day=Integer.parseInt(scanner.next());
+                        selectedDate=LocalDate.of(year,month,day);
+                        break;
+                    } catch(NumberFormatException | java.time.DateTimeException exception){
+                        System.out.println("Enter valid date using whole numbers");
+                    }
+
+                }
                 List<PriceInterval> firstDayprices=datesAndPrices.subList(0,96);
                 BatteryOptimizationResult fullCycleResult=optimizer.oneFullCycle(firstDayprices);
                 System.out.println("Profit with one full cycle is:"+fullCycleResult.getProfitEUR()+"EUR");
