@@ -247,7 +247,16 @@ public class Main {
                     }
 
                 }
-                List<PriceInterval> firstDayprices=datesAndPrices.subList(0,96);
+                List<PriceInterval> firstDayprices= new ArrayList<>();
+                for(PriceInterval interval :datesAndPrices){
+                    if(interval.getStartTime().toLocalDate().equals(selectedDate)){
+                        firstDayprices.add(interval);
+                    }
+                }
+                if (firstDayprices.isEmpty()){
+                    System.out.println("No price data available for" + selectedDate);
+                    return;
+                }
                 BatteryOptimizationResult fullCycleResult=optimizer.oneFullCycle(firstDayprices);
                 System.out.println("Profit with one full cycle is:"+fullCycleResult.getProfitEUR()+"EUR");
                 BatterySimulator check= new BatterySimulator(battery);

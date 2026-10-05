@@ -199,7 +199,13 @@ public class BatteryOptimizer {
 
 
         }
-    public BatteryOptimizationResult oneFullCycle(List<PriceInterval> prices){
+        public BatteryOptimizationResult oneFullCycle(List<PriceInterval> prices){
+        return optimizeOneCycle(prices,true);
+        }
+        public BatteryOptimizationResult oneAdditionalCycle(List<PriceInterval> prices){
+        return optimizeOneCycle(prices, false);
+        }
+    public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval> prices, boolean requireFullCycle){
         Objects.requireNonNull(prices,"Price list must not be null.");
         if (prices.isEmpty()){
             throw new IllegalArgumentException("Price list must not be empty.");
@@ -254,7 +260,7 @@ public class BatteryOptimizer {
                         if(!isTransitionToNewStateIsAllowed(startState,endState)){
                             continue;
                         }
-                        if(currentPhase==Cycle.CHARGING &&endState<startState &&startState !=maxState){
+                        if(requireFullCycle && currentPhase==Cycle.CHARGING &&endState<startState &&startState !=maxState){
                             continue;
                         }
                         Cycle nextPhase= getNextPhaseCycle(currentPhase,startState,endState);
