@@ -1,3 +1,4 @@
+
 package bess;
 
 public class BatterySpecification {
@@ -8,6 +9,8 @@ public class BatterySpecification {
     private double maxSoC;
     private double chargeEfficiency;
     private double dischargeEfficiency;
+    private static double investmentPerMWh=10000;
+    private static double cycleCapacity=6000;
 
     public BatterySpecification (
             double batteryCapacityMWh,
@@ -94,6 +97,12 @@ public class BatterySpecification {
     }
     public double getUsableEnergyMWh(){
         return getMaxEnergyMWh()- getMinEnergyMWh();
+    }
+    public double getInvestmentPerMWh() {
+        return getBatteryCapacityMWh()*investmentPerMWh;
+    }
+    public double getCostPerCycle() {
+        return  getInvestmentPerMWh()/cycleCapacity;
     }
 }
 
