@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.time.LocalDate;
 
 public class BatteryOptimizer {
     private final BatterySpecification specification;
@@ -205,7 +206,10 @@ public class BatteryOptimizer {
         public BatteryOptimizationResult oneAdditionalCycle(List<PriceInterval> prices){
         return optimizeOneCycle(prices, false);
         }
-    public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval> prices, boolean requireFullCycle){
+        public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval>prices, boolean requireFullCycle){
+        return optimizeOneCycle(prices,requireFullCycle,null);
+        }
+    public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval> prices, boolean requireFullCycle, LocalDate cycleStartDate){
         Objects.requireNonNull(prices,"Price list must not be null.");
         if (prices.isEmpty()){
             throw new IllegalArgumentException("Price list must not be empty.");
@@ -254,6 +258,10 @@ public class BatteryOptimizer {
                     }
                     Cycle currentPhase=phases[phaseIndex];
                     for(int endState=0;endState<numOfStates;endState++){
+                        boolean startNewCycle=currentPhase==Cycle.WAITING&& endState>startState;
+                        if(startNewCycle && cycleStartDate!=null && !interval.getStartTime().toLocalDate().equals(cycleStartDate)){
+                            continue;
+                        }
                         if(completed==1&& endState!=startState){
                             continue;
                         }
@@ -334,8 +342,9 @@ public class BatteryOptimizer {
             int dischargingIntervals=(int)Math.ceil((double)levels/maxDischargeStepsPerInterval);
             return chargingIntervals+dischargingIntervals;
     }
-    public BatteryOptimizationResult optimizedSchedule(List<PriceInterval> prices){
-        BatteryOptimizationResult bestResult=oneFullCycle(prices);
+    public BatteryOptimizationResult optimizedSchedule(List<PriceInterval> prices, LocalDate selectedDate){
+        Objects.requireNonNull(selectedDate,"Selected date must not be null");
+        BatteryOptimizationResult bestResult=optimizeOneCycle(prices,true,selectedDate);
         double minMargin=2* specification.getCostPerCycle();
         int minFullCycleIntervals=getMinFullCycleIntervals();
         if(prices.size()<minFullCycleIntervals+2){
@@ -358,11 +367,11 @@ public class BatteryOptimizer {
                 if(fullCyclePrices.size()<minFullCycleIntervals){
                     continue;
                 }
-                BatteryOptimizationResult optionalCycleResult= oneAdditionalCycle(additionalCyclePrices);
+                BatteryOptimizationResult optionalCycleResult= optimizeOneCycle(additionalCyclePrices,false,selectedDate);
                 if(optionalCycleResult.getProfitEUR()<minMargin){
                     continue;
                 }
-                BatteryOptimizationResult fullCycleResult=oneFullCycle(fullCyclePrices);
+                BatteryOptimizationResult fullCycleResult=optimizeOneCycle(fullCyclePrices,true,selectedDate);
                 double profitFromBothCycles=fullCycleResult.getProfitEUR()+optionalCycleResult.getProfitEUR();
                 if(profitFromBothCycles>bestResult.getProfitEUR()){
                     List<Schedule> combinedSteps=new ArrayList<>();

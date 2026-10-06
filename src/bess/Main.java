@@ -270,7 +270,7 @@ public class Main {
                 }
                 System.out.println("Reached maximum: "+(Math.abs(maxEnergy-battery.getMaxEnergyMWh())<1e-6));
                 System.out.println("Returned to min: "+(Math.abs(check.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
-                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizedSchedule(firstDayprices);
+                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizedSchedule(firstDayprices,selectedDate);
                 System.out.println("Daily trading profit is: "+ dailyFinancialResult.getProfitEUR()+"EUR");
                 BatterySimulator dailyCheck=new BatterySimulator(battery);
                 double checkedDailyProfit=0;
