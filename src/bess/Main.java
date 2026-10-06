@@ -270,6 +270,21 @@ public class Main {
                 }
                 System.out.println("Reached maximum: "+(Math.abs(maxEnergy-battery.getMaxEnergyMWh())<1e-6));
                 System.out.println("Returned to min: "+(Math.abs(check.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
+                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizedSchedule(firstDayprices);
+                System.out.println("Daily trading profit is: "+ dailyFinancialResult.getProfitEUR()+"EUR");
+                BatterySimulator dailyCheck=new BatterySimulator(battery);
+                double checkedDailyProfit=0;
+                for(Schedule step:dailyFinancialResult.getSteps()){
+                    dailyCheck.executeSchedule(step);
+                    double amount=step.getPowerMW()*0.25*step.getPriceInterval().getPricePerMWh();
+                    if(step.getAction()==Battery.CHARGE){
+                        checkedDailyProfit-=amount;
+                    } else if (step.getAction()==Battery.DISCHARGE){
+                        checkedDailyProfit+=amount;
+                    }
+                }
+                System.out.println("Daily profit matches:"+ (Math.abs(checkedDailyProfit-dailyFinancialResult.getProfitEUR())<1e-6));
+                System.out.println("Daily schedule returned to minimum:"+ (Math.abs(dailyCheck.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
             }
 
         } catch (IOException exception){
