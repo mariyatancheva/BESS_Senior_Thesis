@@ -315,6 +315,72 @@ public class BatteryOptimizer {
         Collections.reverse(steps);
         return new BatteryOptimizationResult(bestProfit,steps);
     }
+    private int getMinFullCycleIntervals(){
+        int maxChargeStepsPerInterval=0;
+        int maxDischargeStepsPerInterval=0;
+        for(int state=1; state< numOfStates; state++){
+            if(isTransitionToNewStateIsAllowed(0,state)){
+                maxChargeStepsPerInterval=state;
+            }
+            if(isTransitionToNewStateIsAllowed(state,0)){
+                maxDischargeStepsPerInterval=state;
+            }
+        }
+            if(maxChargeStepsPerInterval==0|| maxDischargeStepsPerInterval==0){
+                throw new IllegalArgumentException("Power limits are invalid for the capacity of this battery.");
+            }
+            int levels=numOfStates-1;
+            int chargingIntervals=(int)Math.ceil((double)levels/maxChargeStepsPerInterval);
+            int dischargingIntervals=(int)Math.ceil((double)levels/maxDischargeStepsPerInterval);
+            return chargingIntervals+dischargingIntervals;
+    }
+    public BatteryOptimizationResult optimizedSchedule(List<PriceInterval> prices){
+        BatteryOptimizationResult bestResult=oneFullCycle(prices);
+        double minMargin=2* specification.getCostPerCycle();
+        int minFullCycleIntervals=getMinFullCycleIntervals();
+        if(prices.size()<minFullCycleIntervals+2){
+            return bestResult;
+        }
+        for (int split=2;split<=prices.size()-2;split++){
+            List<PriceInterval> firstPart=prices.subList(0,split);
+            List<PriceInterval> secondPart=prices.subList(split,prices.size());
+            for (int order=0;order<2;order++){
+                boolean fullCycleFirst=order==0;
+                List<PriceInterval> fullCyclePrices;
+                List<PriceInterval> additionalCyclePrices;
+                if(fullCycleFirst){
+                    fullCyclePrices=firstPart;
+                    additionalCyclePrices=secondPart;
+                } else{
+                    fullCyclePrices=secondPart;
+                    additionalCyclePrices=firstPart;
+                }
+                if(fullCyclePrices.size()<minFullCycleIntervals){
+                    continue;
+                }
+                BatteryOptimizationResult optionalCycleResult= oneAdditionalCycle(additionalCyclePrices);
+                if(optionalCycleResult.getProfitEUR()<minMargin){
+                    continue;
+                }
+                BatteryOptimizationResult fullCycleResult=oneFullCycle(fullCyclePrices);
+                double profitFromBothCycles=fullCycleResult.getProfitEUR()+optionalCycleResult.getProfitEUR();
+                if(profitFromBothCycles>bestResult.getProfitEUR()){
+                    List<Schedule> combinedSteps=new ArrayList<>();
+                    if(fullCycleFirst){
+                        combinedSteps.addAll(fullCycleResult.getSteps());
+                        combinedSteps.addAll(optionalCycleResult.getSteps());
+                    }else {
+                        combinedSteps.addAll(optionalCycleResult.getSteps());
+                        combinedSteps.addAll(fullCycleResult.getSteps());
+                    }
+                    bestResult=new BatteryOptimizationResult(profitFromBothCycles, combinedSteps);
+                }
+            }
+        }
+        return bestResult;
+
+
+    }
     }
 
 

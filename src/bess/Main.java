@@ -261,9 +261,9 @@ public class Main {
                 System.out.println("Profit with one full cycle is:"+fullCycleResult.getProfitEUR()+"EUR");
                 BatteryOptimizationResult flexibleResult = optimizer.oneAdditionalCycle(firstDayprices);
                 System.out.println("Profit with one full or partial cycle is:"+ flexibleResult.getProfitEUR()+"EUR");
+
                 BatterySimulator check= new BatterySimulator(battery);
                 double maxEnergy=check.getCurrentEnergyMWh();
-
                 for(Schedule step: fullCycleResult.getSteps()){
                     check.executeSchedule(step);
                     maxEnergy=Math.max(maxEnergy,check.getCurrentEnergyMWh());

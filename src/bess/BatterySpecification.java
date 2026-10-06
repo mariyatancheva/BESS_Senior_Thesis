@@ -98,11 +98,11 @@ public class BatterySpecification {
     public double getUsableEnergyMWh(){
         return getMaxEnergyMWh()- getMinEnergyMWh();
     }
-    public double getInvestmentPerMWh() {
+    public double getInvestment() {
         return getBatteryCapacityMWh()*investmentPerMWh;
     }
     public double getCostPerCycle() {
-        return  getInvestmentPerMWh()/cycleCapacity;
+        return  getInvestment()/cycleCapacity;
     }
 }
 
