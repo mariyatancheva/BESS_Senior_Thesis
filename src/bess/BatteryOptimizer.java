@@ -353,6 +353,9 @@ public class BatteryOptimizer {
         for (int split=2;split<=prices.size()-2;split++){
             List<PriceInterval> firstPart=prices.subList(0,split);
             List<PriceInterval> secondPart=prices.subList(split,prices.size());
+            if(!secondPart.get(0).getStartTime().toLocalDate().equals(selectedDate)){
+                continue;
+            }
             for (int order=0;order<2;order++){
                 boolean fullCycleFirst=order==0;
                 List<PriceInterval> fullCyclePrices;
@@ -390,7 +393,76 @@ public class BatteryOptimizer {
 
 
     }
+    public double [][] createCycleProfitTable(int intervalCount){
+        double[][] cycleProfits= new double[intervalCount][intervalCount+1];
+        for(double[] row : cycleProfits){
+            Arrays.fill(row, Double.NEGATIVE_INFINITY);
+        }
+        return cycleProfits;
     }
+    private double[][] calcCycleProfits(List<PriceInterval> prices, boolean requireFullCycle){
+        int intervalCount=prices.size();
+        double [][] cycleProfit=createCycleProfitTable(intervalCount);
+        Cycle[] phases=Cycle.values();
+        int waitingIndex=Cycle.WAITING.ordinal();
+        int maximumState=numOfStates-1;
+        for(int startIndex=0;startIndex<=intervalCount;startIndex++){
+            double [][] currentProfit=new double[numOfStates][phases.length];
+            for(double [] row: currentProfit){
+                Arrays.fill(row,Double.NEGATIVE_INFINITY);
+            }
+            currentProfit[0][waitingIndex]=0;
+            for(int intervalIndex=startIndex;intervalIndex<intervalCount;intervalIndex++){
+                double price=prices.get(intervalIndex).getPricePerMWh();
+                double[][] nextProfit=new double[numOfStates][phases.length];
+                for(double [] row:nextProfit){
+                    Arrays.fill(row,Double.NEGATIVE_INFINITY);
+                }
+                for(int startState=0;startState<numOfStates;startState++){
+                    for(int phaseIndex=0; phaseIndex<phases.length;phaseIndex++){
+                        double currentResult=currentProfit[startState][phaseIndex];
+                        if(currentResult==Double.NEGATIVE_INFINITY){
+                            continue;
+                        }
+                        Cycle currentPhase=phases[phaseIndex];
+                        for(int endState=0;endState<numOfStates;endState++){
+                            if(intervalIndex==startIndex &&endState<=startState){
+                                continue;
+                            }
+                            if(!isTransitionToNewStateIsAllowed(startState,endState)){
+                                continue;
+                            }
+                            if(requireFullCycle && currentPhase==Cycle.CHARGING && endState<startState && startState!=maximumState){
+                                continue;
+                            }
+                            Cycle nextPhase= getNextPhaseCycle(currentPhase,startState,endState);
+                            if(nextPhase==null){
+                                continue;
+                            }
+                            double transitionProfit=getTransitionProfitEUR(startState,endState,price);
+                                double candidateProfit=currentResult+transitionProfit;
+                                if(endState==0 && endState<startState){
+                                    int endIndex=intervalIndex+1;
+                                    if (candidateProfit>cycleProfit[startIndex][endIndex]){
+                                        cycleProfit[startIndex][endIndex]=candidateProfit;
+                                    }
+                                    continue;
+                                }
+                                int nextPhaseIndex=nextPhase.ordinal();
+                                if(candidateProfit>nextProfit[endState][nextPhaseIndex]){
+                                    nextProfit[endState][nextPhaseIndex]=candidateProfit;
+                                }
+
+                            }
+                        }
+                    }
+                currentProfit=nextProfit;
+                }
+            }
+        return cycleProfit;
+        }
+    }
+
 
 
 

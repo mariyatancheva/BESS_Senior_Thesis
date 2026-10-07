@@ -270,7 +270,25 @@ public class Main {
                 }
                 System.out.println("Reached maximum: "+(Math.abs(maxEnergy-battery.getMaxEnergyMWh())<1e-6));
                 System.out.println("Returned to min: "+(Math.abs(check.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
-                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizedSchedule(firstDayprices,selectedDate);
+
+                LocalDate nextDate= selectedDate.plusDays(1);
+                List<PriceInterval> schedulingPrices=new ArrayList<>();
+                for(PriceInterval interval :datesAndPrices){
+                    LocalDate intervalDate=interval.getStartTime().toLocalDate();
+                    if(intervalDate.equals(selectedDate)||intervalDate.equals(nextDate)){
+                        schedulingPrices.add(interval);
+                    }
+                }
+                ZoneId schedulingZone= schedulingPrices.get(0).getStartTime().getZone();
+                ZonedDateTime expectedStart=selectedDate.atStartOfDay(schedulingZone);
+                ZonedDateTime expectedEnd=selectedDate.plusDays(2).atStartOfDay(schedulingZone);
+                PriceInterval firstInterval=schedulingPrices.get(0);
+                PriceInterval lastInterval=schedulingPrices.get(schedulingPrices.size()-1);
+                if(!firstInterval.getStartTime().toInstant().equals(expectedStart.toInstant())||!lastInterval.getEndTime().toInstant().equals(expectedEnd.toInstant())){
+                    System.out.println("Complete price data for the selected and following day");
+                    return;
+                }
+                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizedSchedule(schedulingPrices,selectedDate);
                 System.out.println("Daily trading profit is: "+ dailyFinancialResult.getProfitEUR()+"EUR");
                 BatterySimulator dailyCheck=new BatterySimulator(battery);
                 double checkedDailyProfit=0;
