@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 public class BatteryOptimizer {
     private final BatterySpecification specification;
@@ -460,6 +461,34 @@ public class BatteryOptimizer {
                 }
             }
         return cycleProfit;
+        }
+        private int getDailyCycleStatusAfterTransition(int startDay, int endDay, int lastDay, int cycleStatus) {
+            if (startDay == endDay) {
+                return cycleStatus;
+            }
+            if(startDay<lastDay&&(cycleStatus&1)==0){
+                return -1;
+            }
+            if(endDay>startDay+1 ){
+                return -1;
+            }
+            return 0;
+        }
+        private List<int[]> selectCycleSequence(List<PriceInterval> prices, double [][] fullCycleProfit, double [][] additionalCycleProfit){
+        int intervalCount=prices.size();
+        LocalDate firstDate=prices.get(0).getStartTime().toLocalDate();
+        int[] BoundaryDay=new int[intervalCount+1];
+        for(int i=0;i<intervalCount;i++){
+            LocalDate date=prices.get(i).getStartTime().toLocalDate();
+            BoundaryDay[i]=(int) ChronoUnit.DAYS.between(firstDate,date);
+        }
+        LocalDate finalBoundaryDate=prices.get(intervalCount-1).getEndTime().toLocalDate();
+        BoundaryDay[intervalCount]=(int) ChronoUnit.DAYS.between(firstDate,finalBoundaryDate);
+        int lastDay=BoundaryDay[intervalCount-1];
+        double minimumProfitReachedFor2ndCycle=2* specification.getCostPerCycle();
+        double [][] bestProfit=new double[intervalCount+1][4];
+        double [][] previousTime=new double[intervalCount+1][4];
+        double [][] previousCycleState=new double[intervalCount+1][4];
         }
     }
 
