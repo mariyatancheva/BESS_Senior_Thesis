@@ -1,5 +1,4 @@
 package bess;
-
 import java.util.Objects;
 import java.util.Arrays;
 import java.util.List;
@@ -487,8 +486,86 @@ public class BatteryOptimizer {
         int lastDay=BoundaryDay[intervalCount-1];
         double minimumProfitReachedFor2ndCycle=2* specification.getCostPerCycle();
         double [][] bestProfit=new double[intervalCount+1][4];
-        double [][] previousTime=new double[intervalCount+1][4];
-        double [][] previousCycleState=new double[intervalCount+1][4];
+        int [][] previousTime=new int[intervalCount+1][4];
+        int [][] previousCycleState=new int[intervalCount+1][4];
+        int [][] previousAction=new int[intervalCount+1][4];
+        for (int i=0;i<=intervalCount;i++){
+            Arrays.fill(bestProfit[i], Double.NEGATIVE_INFINITY);
+            Arrays.fill(previousTime[i],-1);
+            Arrays.fill(previousCycleState[i],-1);
+        }
+        bestProfit[0][0];
+        for(int startTime=0;startTime<intervalCount;startTime++){
+            int startDay=BoundaryDay[startTime];
+            for(int cycleState=0;cycleState<intervalCount;cycleState++){
+                double currentProfit=bestProfit[startTime][cycleState];
+                if(currentProfit== Double.NEGATIVE_INFINITY){
+                    continue;
+                }
+                int nextCycleState= getDailyCycleStatusAfterTransition(startDay,BoundaryDay[startTime+1], lastDay,cycleState);
+                if (nextCycleState != -1 && currentProfit>bestProfit[startTime+1][nextCycleState]){
+                    bestProfit[startTime+1][nextCycleState]=currentProfit;
+                    previousTime[startTime+1][nextCycleState]=startTime;
+                    previousCycleState[startTime+1][nextCycleState]=cycleState;
+                    previousAction[startTime+1][nextCycleState]=0;
+                }
+                if(startDay==lastDay){
+                    continue;
+                }
+                for(int cycleType=1;cycleType<=2;cycleType++){
+                    if((cycleState & cycleType)!=0){continue;}
+                    int cycleWithState= cycleState | cycleType;
+                    for(int end=startTime;end<=intervalCount;end++){
+                        double cycleProfit;
+                        if(cycleType==1){
+                            cycleProfit=fullCycleProfit[startTime][end];
+                        }else{
+                            cycleProfit=additionalCycleProfit[startTime][end];
+                        }
+                        if(cycleProfit==Double.NEGATIVE_INFINITY){continue;}
+                        if(cycleType==2 &&cycleProfit<minimumProfitReachedFor2ndCycle){continue;}
+                        int endCycleState=getDailyCycleStatusAfterTransition(startDay,BoundaryDay[end],lastDay,cycleWithState);
+                        if (endCycleState==-1){
+                            continue;
+                        }
+                        double candidateProfit=currentProfit+cycleProfit;
+                        if(candidateProfit>bestProfit[end][endCycleState]){
+                            bestProfit[end][endCycleState]=candidateProfit;
+                            previousTime[end][cycleState]=startTime;
+                            previousCycleState[end][cycleState]=cycleState;
+                            previousAction[end][cycleState]=cycleType;
+                        }
+                    }
+                }
+            }
+        }
+        int finalCycleState=-1;
+        double finalProfit=Double.NEGATIVE_INFINITY;
+        for(int state=0;state<4;state++){
+            if(bestProfit[intervalCount][state]>finalProfit){
+                finalProfit=bestProfit[intervalCount][state];
+                finalCycleState=state;
+            }
+        }
+        if(finalCycleState==-1){
+            throw new IllegalStateException("Cycle requirements are not met.");
+        }
+        List<int[]> selectedCycles= new ArrayList<>();
+        int time= intervalCount;
+        int state=finalCycleState;
+        while(time>0){
+            int start=previousTime[time][state];
+            int oldState=previousCycleState[time][state];
+            int action=previousAction[time][state];
+            if(start==-1 || oldState==-1){
+                throw new IllegalStateException("The cycle cannot be reconstructed");
+            }
+            time=start;
+            state=oldState;
+        }
+        Collections.reverse(selectedCycles);
+        return selectedCycles;
+
         }
     }
 
