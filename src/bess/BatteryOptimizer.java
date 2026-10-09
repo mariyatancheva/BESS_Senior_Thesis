@@ -613,14 +613,27 @@ public class BatteryOptimizer {
         PriceInterval lastInterval=prices.get(prices.size()-1);
         LocalDate firstDate=firstInterval.getStartTime().toLocalDate();
         LocalDate lastDate=lastInterval.getStartTime().toLocalDate();
-        if (!firstInterval.getStartTime().equals()(firstDate.atStartOfDay(firstInterval.getStartTime().getZone()))){
+        if (!firstInterval.getStartTime().equals(firstDate.atStartOfDay(firstInterval.getStartTime().getZone()))){
             throw new IllegalArgumentException("Price data must start from the beginnig of the the first day");
             }
-            if (!lastInterval.getEndTime().equals()(lastDate.plusDays(1).atStartOfDay(firstInterval.getStartTime().getZone())){
+            if (!lastDate.isAfter(firstDate)){
+                throw new IllegalArgumentException("At least two days with prices are needed");
+            }
+            if (!lastInterval.getEndTime().equals(lastDate.plusDays(1).atStartOfDay(firstInterval.getStartTime().getZone()))){
                 throw new IllegalArgumentException("Price data must end with the last date interval");
             }
+            for (int i =1; i< prices.size();i++){
+                if(!prices.get(i-1).getEndTime().toInstant().equals(prices.get(i).getStartTime().toInstant())){
+                    throw new IllegalArgumentException("Price interval must be consecutive.");
+                }
+            }
+            double [][] fullCycleProfit=calcCycleProfits(prices,true);
+            double [][] additionalCycleProfit=calcCycleProfits(prices,false);
+            List<int[]> selectedCycles= selectCycleSequence(prices, fullCycleProfit, additionalCycleProfit);
+            return buildingSchedule(prices, selectedCycles);
 
         }
+
     }
 
 
