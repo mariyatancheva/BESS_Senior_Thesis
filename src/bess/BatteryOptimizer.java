@@ -209,7 +209,10 @@ public class BatteryOptimizer {
         public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval>prices, boolean requireFullCycle){
         return optimizeOneCycle(prices,requireFullCycle,null);
         }
-    public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval> prices, boolean requireFullCycle, LocalDate cycleStartDate){
+        public BatteryOptimizationResult optimizeOneCycle (List<PriceInterval> prices, boolean requireFullCycle, LocalDate cycleStartDate){
+        return optimizeOneCycle(prices, requireFullCycle, cycleStartDate, false);
+        }
+    public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval> prices, boolean requireFullCycle, LocalDate cycleStartDate, boolean exactBounds){
         Objects.requireNonNull(prices,"Price list must not be null.");
         if (prices.isEmpty()){
             throw new IllegalArgumentException("Price list must not be empty.");
@@ -258,6 +261,12 @@ public class BatteryOptimizer {
                     }
                     Cycle currentPhase=phases[phaseIndex];
                     for(int endState=0;endState<numOfStates;endState++){
+                        if(exactBounds &&intervaIndex==0 &&endState<=startState){
+                            continue;
+                        }
+                        if(exactBounds &&intervaIndex<prices.size()-1 && endState<startState && endState==0){
+                            continue;
+                        }
                         boolean startNewCycle=currentPhase==Cycle.WAITING&& endState>startState;
                         if(startNewCycle && cycleStartDate!=null && !interval.getStartTime().toLocalDate().equals(cycleStartDate)){
                             continue;
@@ -406,7 +415,7 @@ public class BatteryOptimizer {
         Cycle[] phases=Cycle.values();
         int waitingIndex=Cycle.WAITING.ordinal();
         int maximumState=numOfStates-1;
-        for(int startIndex=0;startIndex<=intervalCount;startIndex++){
+        for(int startIndex=0;startIndex<intervalCount;startIndex++){
             double [][] currentProfit=new double[numOfStates][phases.length];
             for(double [] row: currentProfit){
                 Arrays.fill(row,Double.NEGATIVE_INFINITY);
@@ -494,10 +503,10 @@ public class BatteryOptimizer {
             Arrays.fill(previousTime[i],-1);
             Arrays.fill(previousCycleState[i],-1);
         }
-        bestProfit[0][0];
+        bestProfit[0][0]=0;
         for(int startTime=0;startTime<intervalCount;startTime++){
             int startDay=BoundaryDay[startTime];
-            for(int cycleState=0;cycleState<intervalCount;cycleState++){
+            for(int cycleState=0;cycleState<4;cycleState++){
                 double currentProfit=bestProfit[startTime][cycleState];
                 if(currentProfit== Double.NEGATIVE_INFINITY){
                     continue;
@@ -515,7 +524,7 @@ public class BatteryOptimizer {
                 for(int cycleType=1;cycleType<=2;cycleType++){
                     if((cycleState & cycleType)!=0){continue;}
                     int cycleWithState= cycleState | cycleType;
-                    for(int end=startTime;end<=intervalCount;end++){
+                    for(int end=startTime+1;end<=intervalCount;end++){
                         double cycleProfit;
                         if(cycleType==1){
                             cycleProfit=fullCycleProfit[startTime][end];
@@ -531,9 +540,9 @@ public class BatteryOptimizer {
                         double candidateProfit=currentProfit+cycleProfit;
                         if(candidateProfit>bestProfit[end][endCycleState]){
                             bestProfit[end][endCycleState]=candidateProfit;
-                            previousTime[end][cycleState]=startTime;
-                            previousCycleState[end][cycleState]=cycleState;
-                            previousAction[end][cycleState]=cycleType;
+                            previousTime[end][endCycleState]=startTime;
+                            previousCycleState[end][endCycleState]=cycleState;
+                            previousAction[end][endCycleState]=cycleType;
                         }
                     }
                 }
@@ -560,12 +569,40 @@ public class BatteryOptimizer {
             if(start==-1 || oldState==-1){
                 throw new IllegalStateException("The cycle cannot be reconstructed");
             }
+            if(action !=0){
+                selectedCycles.add(new int[]{start,time,action});
+            }
             time=start;
             state=oldState;
         }
         Collections.reverse(selectedCycles);
         return selectedCycles;
 
+        }
+        private BatteryOptimizationResult buildingSchedule(List<PriceInterval> prices, List<int[]> selectedCycles) {
+            List<Schedule> steps = new ArrayList<>();
+            double totalProfit = 0;
+            int nextInterval = 0;
+            for (int[] cycle : selectedCycles) {
+                int start = cycle[0];
+                int end = cycle[1];
+                int cycleType = cycle[2];
+                while (nextInterval < start) {
+                    steps.add(new Schedule(prices.get(nextInterval), Battery.IDLE, 0));
+
+                    nextInterval++;
+                }
+                BatteryOptimizationResult cycleResult = optimizeOneCycle(prices.subList(start, end), cycleType == 1, null, true);
+
+                steps.addAll(cycleResult.getSteps());
+                totalProfit+=cycleResult.getProfitEUR();
+                nextInterval=end;
+            }
+            while(nextInterval<prices.size()){
+                steps.add(new Schedule(prices.get(nextInterval),Battery.IDLE,0));
+                nextInterval++;
+            }
+            return new BatteryOptimizationResult(totalProfit, steps);
         }
     }
 
