@@ -416,12 +416,18 @@ public class BatteryOptimizer {
         int waitingIndex=Cycle.WAITING.ordinal();
         int maximumState=numOfStates-1;
         for(int startIndex=0;startIndex<intervalCount;startIndex++){
+            LocalDate startDate=prices.get(startIndex).getStartTime().toLocalDate();
+            LocalDate lastAllowedDate=requireFullCycle?startDate:startDate.plusDays(1);
             double [][] currentProfit=new double[numOfStates][phases.length];
             for(double [] row: currentProfit){
                 Arrays.fill(row,Double.NEGATIVE_INFINITY);
             }
             currentProfit[0][waitingIndex]=0;
             for(int intervalIndex=startIndex;intervalIndex<intervalCount;intervalIndex++){
+                LocalDate intervalDate=prices.get(intervalIndex).getStartTime().toLocalDate();
+                if(intervalDate.isAfter(lastAllowedDate)){
+                    break;
+                }
                 double price=prices.get(intervalIndex).getPricePerMWh();
                 double[][] nextProfit=new double[numOfStates][phases.length];
                 for(double [] row:nextProfit){
@@ -575,7 +581,7 @@ public class BatteryOptimizer {
         return selectedCycles;
 
         }
-        private List<int[]> addAditionalCycle(List<PriceInterval> prices, List<int[]>mainCycle, double[][] addtionalCycleProfit,LocalDate selectedDate){
+        private List<int[]> addAditionalCycle(List<PriceInterval> prices, List<int[]>mainCycle, double[][] addtionalCycleProfit){
         int intervalCount=prices.size();
         boolean[] occupiedIntervals= new boolean[intervalCount];
         for(int[]cycle:mainCycle) {
@@ -610,7 +616,7 @@ public class BatteryOptimizer {
                         previousStatus[time+1][nextStatus]=status;
                         selectedCycle[time+1][nextStatus]=false;
                     }
-                    if (status==1 || occupiedIntervals[time] || !startDate.equals(selectedDate)){
+                    if (status==1 || occupiedIntervals[time] || startDate.equals(lastDate)){
                         continue;
                     }
                     for (int end=time+1;end<=intervalCount;end++){
@@ -680,8 +686,7 @@ public class BatteryOptimizer {
             }
             return new BatteryOptimizationResult(totalProfit, steps);
         }
-        public BatteryOptimizationResult optimizePeriod(List <PriceInterval> prices,LocalDate selectedDate){
-        Objects.requireNonNull(selectedDate,"Selected date must not be null");
+        public BatteryOptimizationResult optimizePeriod(List <PriceInterval> prices){
         Objects.requireNonNull(prices,"Prices list must not be null");
         if (prices.isEmpty()){
             throw new IllegalStateException("Price list must not be empty.");
@@ -707,16 +712,53 @@ public class BatteryOptimizer {
             double [][] fullCycleProfit=calcCycleProfits(prices,true);
             List<int[]> mainCycle= selectMainCycle(prices, fullCycleProfit);
             double [][] additionalCycleProfit=calcCycleProfits(prices,false);
-            List<int[]> allCycles=addAditionalCycle(prices,mainCycle,additionalCycleProfit,selectedDate);
-            List<int[]> selectedDayCycle= new ArrayList<>();
-            for(int[] cycle: allCycles){
-                LocalDate startDate=prices.get(cycle[0]).getStartTime().toLocalDate();
-                if(startDate.equals(selectedDate)){
-                    selectedDayCycle.add(cycle);
+            List<int[]> allCycles=addAditionalCycle(prices,mainCycle,additionalCycleProfit);
+
+            return buildingSchedule(prices,allCycles);
+
+        }
+        public BatteryOptimizationResult getDailyResult(BatteryOptimizationResult periodResult, LocalDate selectedDate){
+        Objects.requireNonNull(periodResult,"Period result must not be null");
+        Objects.requireNonNull(selectedDate,"Selected date must not be null");
+        List<Schedule> periodSteps=periodResult.getSteps();
+        if(periodSteps.isEmpty()){
+            throw new IllegalArgumentException("The period schedule is empty.");
+        }
+        LocalDate firstDate=periodSteps.get(0).getPriceInterval().getStartTime().toLocalDate();
+        LocalDate lastDate=periodSteps.get(periodSteps.size()-1).getPriceInterval().getStartTime().toLocalDate();
+        if(selectedDate.isBefore((firstDate))||!selectedDate.isBefore(lastDate)){
+            throw new IllegalArgumentException("Select a date with a complete price data for the next day");
+        }
+        BatterySimulator simulator=new BatterySimulator(specification);
+        List<Schedule> dailySteps=new ArrayList<>();
+        double dailyProfit=0;
+        LocalDate cycleStartDate=null;
+        LocalDate nextDate=selectedDate.plusDays(1);
+        for(Schedule step: periodSteps){
+            LocalDate intervalDate=step.getPriceInterval().getStartTime().toLocalDate();
+            if(cycleStartDate==null && step.getAction()==Battery.CHARGE){
+                cycleStartDate=intervalDate;
+            }
+            boolean belongsToTheSelectedDate=selectedDate.equals(cycleStartDate);
+            simulator.executeSchedule(step);
+            if(intervalDate.equals(selectedDate)||intervalDate.equals(nextDate)){
+                if(belongsToTheSelectedDate){
+                    dailySteps.add(step);
+                    double amountEUR=step.getPowerMW()*0.25*step.getPriceInterval().getPricePerMWh();
+                    if(step.getAction()==Battery.CHARGE){
+                        dailyProfit-=amountEUR;
+                    } else if (step.getAction()==Battery.DISCHARGE){
+                        dailyProfit+=amountEUR;
+                    }
+                } else{
+                    dailySteps.add(new Schedule(step.getPriceInterval(),Battery.IDLE,0));
                 }
             }
-            return buildingSchedule(prices, selectedDayCycle);
-
+            if(cycleStartDate !=null && step.getAction()==Battery.DISCHARGE && Math.abs(simulator.getCurrentEnergyMWh()- specification.getMinEnergyMWh())<1e-6){
+                cycleStartDate=null;
+            }
+        }
+        return new BatteryOptimizationResult(dailyProfit,dailySteps);
         }
 
     }
