@@ -477,9 +477,7 @@ public class BatteryOptimizer {
             if(startDay<lastDay&&(cycleStatus&1)==0){
                 return -1;
             }
-            if(endDay>startDay+1 ){
-                return -1;
-            }
+
             return 0;
         }
         private List<int[]> selectCycleSequence(List<PriceInterval> prices, double [][] fullCycleProfit, double [][] additionalCycleProfit){
@@ -525,6 +523,10 @@ public class BatteryOptimizer {
                     if((cycleState & cycleType)!=0){continue;}
                     int cycleWithState= cycleState | cycleType;
                     for(int end=startTime+1;end<=intervalCount;end++){
+                        int lastUsedDay=BoundaryDay[end-1];
+                        if (lastUsedDay>startDay+1){
+                            break;
+                        }
                         double cycleProfit;
                         if(cycleType==1){
                             cycleProfit=fullCycleProfit[startTime][end];

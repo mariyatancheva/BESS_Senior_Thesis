@@ -288,11 +288,22 @@ public class Main {
                     System.out.println("Complete price data for the selected and following day");
                     return;
                 }
-                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizedSchedule(schedulingPrices,selectedDate);
+                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizePeriod(schedulingPrices);
+                System.out.println("Scheduled intervals are: "+dailyFinancialResult.getSteps().size());
                 System.out.println("Daily trading profit is: "+ dailyFinancialResult.getProfitEUR()+"EUR");
                 BatterySimulator dailyCheck=new BatterySimulator(battery);
                 double checkedDailyProfit=0;
+                int cycleCount=0;
+                boolean cycleInprogress=false;
+                ZonedDateTime cycleStart=null;
+                double maxSoC= battery.getMinSoC();
+
                 for(Schedule step:dailyFinancialResult.getSteps()){
+                    if(!cycleInprogress && step.getAction()==Battery.CHARGE){
+                        cycleInprogress=true;
+                        cycleStart=step.getPriceInterval().getStartTime();
+                        maxSoC=dailyCheck.getCurrentSoC();
+                    }
                     dailyCheck.executeSchedule(step);
                     double amount=step.getPowerMW()*0.25*step.getPriceInterval().getPricePerMWh();
                     if(step.getAction()==Battery.CHARGE){
@@ -300,8 +311,18 @@ public class Main {
                     } else if (step.getAction()==Battery.DISCHARGE){
                         checkedDailyProfit+=amount;
                     }
+                    if (cycleInprogress){
+                        maxSoC=Math.max(maxSoC,dailyCheck.getCurrentSoC());
+                        if(step.getAction()==Battery.DISCHARGE&&Math.abs(dailyCheck.getCurrentEnergyMWh()- battery.getMinEnergyMWh())<1e-6){
+                            cycleCount++;
+                            System.out.println("Cycle "+ cycleCount);
+                            System.out.println("Start "+ cycleStart.format(formatData));
+                            System.out.println("End "+ step.getPriceInterval().getEndTime().format(formatData));
+                            System.out.println("Maximum SoC: %.2f%%%n "+ maxSoC);
+                            cycleInprogress=false;
+                        }
+                    }
                 }
-                System.out.println("Daily profit matches:"+ (Math.abs(checkedDailyProfit-dailyFinancialResult.getProfitEUR())<1e-6));
                 System.out.println("Daily schedule returned to minimum:"+ (Math.abs(dailyCheck.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
             }
 
