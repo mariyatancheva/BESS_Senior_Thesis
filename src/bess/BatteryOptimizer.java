@@ -477,10 +477,13 @@ public class BatteryOptimizer {
             if(startDay<lastDay&&(cycleStatus&1)==0){
                 return -1;
             }
+            if(endDay>startDay+1&& startDay+1<lastDay) {
+                return -1;
+            }
 
             return 0;
         }
-        private List<int[]> selectCycleSequence(List<PriceInterval> prices, double [][] fullCycleProfit, double [][] additionalCycleProfit){
+        private List<int[]> selectMainCycle(List<PriceInterval> prices, double [][] fullCycleProfit){
         int intervalCount=prices.size();
         LocalDate firstDate=prices.get(0).getStartTime().toLocalDate();
         int[] BoundaryDay=new int[intervalCount+1];
@@ -491,7 +494,6 @@ public class BatteryOptimizer {
         LocalDate finalBoundaryDate=prices.get(intervalCount-1).getEndTime().toLocalDate();
         BoundaryDay[intervalCount]=(int) ChronoUnit.DAYS.between(firstDate,finalBoundaryDate);
         int lastDay=BoundaryDay[intervalCount-1];
-        double minimumProfitReachedFor2ndCycle=2* specification.getCostPerCycle();
         double [][] bestProfit=new double[intervalCount+1][4];
         int [][] previousTime=new int[intervalCount+1][4];
         int [][] previousCycleState=new int[intervalCount+1][4];
@@ -519,7 +521,7 @@ public class BatteryOptimizer {
                 if(startDay==lastDay){
                     continue;
                 }
-                for(int cycleType=1;cycleType<=2;cycleType++){
+                for(int cycleType=1;cycleType<=1;cycleType++){
                     if((cycleState & cycleType)!=0){continue;}
                     int cycleWithState= cycleState | cycleType;
                     for(int end=startTime+1;end<=intervalCount;end++){
@@ -527,14 +529,8 @@ public class BatteryOptimizer {
                         if (lastUsedDay>startDay+1){
                             break;
                         }
-                        double cycleProfit;
-                        if(cycleType==1){
-                            cycleProfit=fullCycleProfit[startTime][end];
-                        }else{
-                            cycleProfit=additionalCycleProfit[startTime][end];
-                        }
+                        double cycleProfit=fullCycleProfit[startTime][end];
                         if(cycleProfit==Double.NEGATIVE_INFINITY){continue;}
-                        if(cycleType==2 &&cycleProfit<minimumProfitReachedFor2ndCycle){continue;}
                         int endCycleState=getDailyCycleStatusAfterTransition(startDay,BoundaryDay[end],lastDay,cycleWithState);
                         if (endCycleState==-1){
                             continue;
@@ -630,8 +626,7 @@ public class BatteryOptimizer {
                 }
             }
             double [][] fullCycleProfit=calcCycleProfits(prices,true);
-            double [][] additionalCycleProfit=calcCycleProfits(prices,false);
-            List<int[]> selectedCycles= selectCycleSequence(prices, fullCycleProfit, additionalCycleProfit);
+            List<int[]> selectedCycles= selectMainCycle(prices, fullCycleProfit);
             return buildingSchedule(prices, selectedCycles);
 
         }
