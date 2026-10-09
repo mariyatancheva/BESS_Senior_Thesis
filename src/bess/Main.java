@@ -324,6 +324,7 @@ public class Main {
                     }
                 }
                 System.out.println("Daily schedule returned to minimum:"+ (Math.abs(dailyCheck.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
+                System.out.println("Daily schedule returned to minimum:"+ (Math.abs(dailyCheck.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
             }
 
         } catch (IOException exception){
