@@ -474,7 +474,7 @@ public class BatteryOptimizer {
             if (startDay == endDay) {
                 return cycleStatus;
             }
-            if(startDay<lastDay&&(cycleStatus&1)==0){
+            if((cycleStatus&1)==0){
                 return -1;
             }
             if(endDay>startDay+1&& startDay+1<lastDay) {
@@ -518,15 +518,13 @@ public class BatteryOptimizer {
                     previousCycleState[startTime+1][nextCycleState]=cycleState;
                     previousAction[startTime+1][nextCycleState]=0;
                 }
-                if(startDay==lastDay){
-                    continue;
-                }
+
                 for(int cycleType=1;cycleType<=1;cycleType++){
                     if((cycleState & cycleType)!=0){continue;}
                     int cycleWithState= cycleState | cycleType;
                     for(int end=startTime+1;end<=intervalCount;end++){
                         int lastUsedDay=BoundaryDay[end-1];
-                        if (lastUsedDay>startDay+1){
+                        if (lastUsedDay>startDay){
                             break;
                         }
                         double cycleProfit=fullCycleProfit[startTime][end];
@@ -577,6 +575,86 @@ public class BatteryOptimizer {
         return selectedCycles;
 
         }
+        private List<int[]> addAditionalCycle(List<PriceInterval> prices, List<int[]>mainCycle, double[][] addtionalCycleProfit,LocalDate selectedDate){
+        int intervalCount=prices.size();
+        boolean[] occupiedIntervals= new boolean[intervalCount];
+        for(int[]cycle:mainCycle) {
+            for(int i=cycle[0];i <cycle[1];i++){
+                occupiedIntervals[i]=true;
+            }
+        }
+        LocalDate lastDate=prices.get(intervalCount-1).getStartTime().toLocalDate();
+        double minProfit=2* specification.getCostPerCycle();
+        double [][] bestProfit=new double[intervalCount+1][2];
+        int [][] previousTime= new int[intervalCount+1][2];
+        int [][] previousStatus= new int[intervalCount+1][2];
+        boolean [][] selectedCycle=new boolean[intervalCount+1][2];
+            for (int i=0;i<=intervalCount;i++){
+                Arrays.fill(bestProfit[i], Double.NEGATIVE_INFINITY);
+                Arrays.fill(previousTime[i],-1);
+                Arrays.fill(previousStatus[i],-1);
+            }
+            bestProfit[0][0]=0;
+            for(int time=0;time<intervalCount;time++){
+                LocalDate startDate=prices.get(time).getStartTime().toLocalDate();
+                for(int status=0;status<2;status++){
+                    double currentProfit=bestProfit[time][status];
+                    if(currentProfit== Double.NEGATIVE_INFINITY){
+                        continue;
+                    }
+                    LocalDate nextDate=prices.get(time).getEndTime().toLocalDate();
+                    int nextStatus= nextDate.equals(startDate)?status:0;
+                    if (currentProfit >bestProfit[time+1][nextStatus]){
+                        bestProfit[time+1][nextStatus]=currentProfit;
+                        previousTime[time+1][nextStatus]=time;
+                        previousStatus[time+1][nextStatus]=status;
+                        selectedCycle[time+1][nextStatus]=false;
+                    }
+                    if (status==1 || occupiedIntervals[time] || !startDate.equals(selectedDate)){
+                        continue;
+                    }
+                    for (int end=time+1;end<=intervalCount;end++){
+                        if (occupiedIntervals[end-1]){
+                            break;
+                        }
+                        LocalDate lastUsedDate=prices.get(end-1).getStartTime().toLocalDate();
+                        if(lastUsedDate.isAfter(startDate.plusDays(1))){
+                            break;
+                        }
+                        double cycleProfit=addtionalCycleProfit[time][end];
+                        if(cycleProfit==Double.NEGATIVE_INFINITY||cycleProfit<minProfit){
+                            continue;
+                        }
+                        LocalDate endDate=prices.get(end-1).getEndTime().toLocalDate();
+                        int endStatus=endDate.equals(startDate) ?1:0;
+                        double candidateProfit=currentProfit+cycleProfit;
+                        if(candidateProfit>bestProfit[end][endStatus]){
+                            bestProfit[end][endStatus]=candidateProfit;
+                            previousTime[end][endStatus]=time;
+                            previousStatus[end][endStatus]=status;
+                            selectedCycle[end][endStatus]=true;
+                    }
+                    }
+                }
+        }
+            int status=bestProfit[intervalCount][1]>bestProfit[intervalCount][0]?1:0;
+            List<int[]> allCycles= new ArrayList<>(mainCycle);
+            int time= intervalCount;
+            while(time>0){
+                int start= previousTime[time][status];
+                int oldStatus= previousStatus[time][status];
+                if (start==-1 || oldStatus==-1){
+                    throw new IllegalStateException("Additional cycle cannot be reconstrcuted.");
+                }
+                if(selectedCycle[time][status]){
+                    allCycles.add(new int[]{start, time,2});
+                }
+                time=start;
+                status=oldStatus;
+            }
+            allCycles.sort((first,second)->Integer.compare(first[0],second[0]));
+            return allCycles;
+        }
         private BatteryOptimizationResult buildingSchedule(List<PriceInterval> prices, List<int[]> selectedCycles) {
             List<Schedule> steps = new ArrayList<>();
             double totalProfit = 0;
@@ -602,7 +680,8 @@ public class BatteryOptimizer {
             }
             return new BatteryOptimizationResult(totalProfit, steps);
         }
-        public BatteryOptimizationResult optimizePeriod(List <PriceInterval> prices){
+        public BatteryOptimizationResult optimizePeriod(List <PriceInterval> prices,LocalDate selectedDate){
+        Objects.requireNonNull(selectedDate,"Selected date must not be null");
         Objects.requireNonNull(prices,"Prices list must not be null");
         if (prices.isEmpty()){
             throw new IllegalStateException("Price list must not be empty.");
@@ -626,8 +705,17 @@ public class BatteryOptimizer {
                 }
             }
             double [][] fullCycleProfit=calcCycleProfits(prices,true);
-            List<int[]> selectedCycles= selectMainCycle(prices, fullCycleProfit);
-            return buildingSchedule(prices, selectedCycles);
+            List<int[]> mainCycle= selectMainCycle(prices, fullCycleProfit);
+            double [][] additionalCycleProfit=calcCycleProfits(prices,false);
+            List<int[]> allCycles=addAditionalCycle(prices,mainCycle,additionalCycleProfit,selectedDate);
+            List<int[]> selectedDayCycle= new ArrayList<>();
+            for(int[] cycle: allCycles){
+                LocalDate startDate=prices.get(cycle[0]).getStartTime().toLocalDate();
+                if(startDate.equals(selectedDate)){
+                    selectedDayCycle.add(cycle);
+                }
+            }
+            return buildingSchedule(prices, selectedDayCycle);
 
         }
 
