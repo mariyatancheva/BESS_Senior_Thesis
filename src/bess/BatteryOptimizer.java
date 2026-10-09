@@ -604,6 +604,23 @@ public class BatteryOptimizer {
             }
             return new BatteryOptimizationResult(totalProfit, steps);
         }
+        public BatteryOptimizationResult optimizePeriod(List <PriceInterval> prices){
+        Objects.requireNonNull(prices,"Prices list must not be null");
+        if (prices.isEmpty()){
+            throw new IllegalStateException("Price list must not be empty.");
+        }
+        PriceInterval firstInterval=prices.get(0);
+        PriceInterval lastInterval=prices.get(prices.size()-1);
+        LocalDate firstDate=firstInterval.getStartTime().toLocalDate();
+        LocalDate lastDate=lastInterval.getStartTime().toLocalDate();
+        if (!firstInterval.getStartTime().equals()(firstDate.atStartOfDay(firstInterval.getStartTime().getZone()))){
+            throw new IllegalArgumentException("Price data must start from the beginnig of the the first day");
+            }
+            if (!lastInterval.getEndTime().equals()(lastDate.plusDays(1).atStartOfDay(firstInterval.getStartTime().getZone())){
+                throw new IllegalArgumentException("Price data must end with the last date interval");
+            }
+
+        }
     }
 
 
