@@ -231,6 +231,10 @@ public class Main {
                 System.out.println("The profit of the CSV matches: "+ (Math.abs(csvSimulatorProfit-csvResult.getProfitEUR())<1e-6));
                 System.out.println("CSV final energy matches minimum: "+ (Math.abs(csvSimulator.getCurrentEnergyMWh()-battery.getMinEnergyMWh())<1e-6));
 
+                long optimizationStart=System.nanoTime();
+                BatteryOptimizationResult periodResult=optimizer.optimizePeriod(datesAndPrices);
+                double optimizationSeconds=(System.nanoTime()-optimizationStart)/1000000000.0;
+                System.out.printf("Period optimization time: %.2f seconds%n",optimizationSeconds);
                 LocalDate selectedDate;
                 while(true){
                     try{
@@ -294,7 +298,7 @@ public class Main {
                     System.out.println("Complete price data for the selected and following day");
                     return;
                 }
-                BatteryOptimizationResult dailyFinancialResult=optimizer.optimizePeriod(schedulingPrices,selectedDate);
+                BatteryOptimizationResult dailyFinancialResult=optimizer.getDailyResult(periodResult,selectedDate);
                 System.out.println("Scheduled intervals are: "+dailyFinancialResult.getSteps().size());
                 System.out.println("Daily trading profit is: "+ dailyFinancialResult.getProfitEUR()+"EUR");
                 BatterySimulator dailyCheck=new BatterySimulator(battery);

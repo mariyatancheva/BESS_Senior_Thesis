@@ -11,12 +11,13 @@ public class BatteryOptimizer {
     private final BatterySpecification specification;
     private final double energyStepMWh;
     private final int numOfStates;
+    private final int[][] allowedStates;
 
     public BatteryOptimizer(BatterySpecification specification) {
         this.specification = Objects.requireNonNull(specification, "Battery specification cannot be null.");
         this.energyStepMWh = specification.getBatteryCapacityMWh() / 100.0;
         this.numOfStates = (int) Math.round(specification.getUsableEnergyMWh() / energyStepMWh) + 1;
-
+        this.allowedStates=buildAllowedState();
     }
 
     public double getEnergyPerState(int stateIndex) {
@@ -102,6 +103,21 @@ public class BatteryOptimizer {
             return Cycle.WAITING;
         }
         return Cycle.DISCHARGING;
+    }
+    private int[][] buildAllowedState(){
+        int [][] transitions=new int[numOfStates][];
+        for(int startState=0; startState<numOfStates;startState++) {
+            int[] possibleEnds = new int[numOfStates];
+            int count = 0;
+            for (int endState = 0; endState < numOfStates; endState++) {
+                if (isTransitionToNewStateIsAllowed(startState, endState)) {
+                    possibleEnds[count] = endState;
+                    count++;
+                }
+            }
+            transitions[startState] = Arrays.copyOf(possibleEnds, count);
+        }
+        return transitions;
     }
     //optimization
 
@@ -440,11 +456,8 @@ public class BatteryOptimizer {
                             continue;
                         }
                         Cycle currentPhase=phases[phaseIndex];
-                        for(int endState=0;endState<numOfStates;endState++){
+                        for(int endState:allowedStates[startState]){
                             if(intervalIndex==startIndex &&endState<=startState){
-                                continue;
-                            }
-                            if(!isTransitionToNewStateIsAllowed(startState,endState)){
                                 continue;
                             }
                             if(requireFullCycle && currentPhase==Cycle.CHARGING && endState<startState && startState!=maximumState){
