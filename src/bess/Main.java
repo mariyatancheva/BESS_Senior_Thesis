@@ -12,24 +12,39 @@ import java.time.LocalDate;
 public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter battery capacity in MWh: ");
-        double capacity = scanner.nextDouble();
-        System.out.print("Enter maximum charging power in MW: ");
-        double maxCharge = scanner.nextDouble();
-        System.out.print("Enter maximum discharging power in MW: ");
-        double maxDischarge = scanner.nextDouble();
+        double capacity;
+        double maxCharge;
+        double maxDischarge;
+       try {
+           System.out.print("Enter battery capacity in MWh: ");
+           capacity = scanner.nextDouble();
+           System.out.print("Enter maximum charging power in MW: ");
+           maxCharge = scanner.nextDouble();
+           System.out.print("Enter maximum discharging power in MW: ");
+           maxDischarge = scanner.nextDouble();
+       } catch (java.util.InputMismatchException exception){
+           System.out.println("Invalid input. Enter numerical values for capacity and power. ");
+           return;
+       }
 
 
-        BatterySpecification battery = new BatterySpecification(
-                capacity,
-                maxCharge,
-                maxDischarge,
-                1,
-                99,
-                Math.sqrt(0.9),
-                Math.sqrt(0.9)
+        BatterySpecification battery;
+        try {
+            battery = new BatterySpecification(
+                    capacity,
+                    maxCharge,
+                    maxDischarge,
+                    1,
+                    99,
+                    Math.sqrt(0.9),
+                    Math.sqrt(0.9)
 
-        );
+            );
+        } catch (IllegalArgumentException exception){
+            System.out.println("Invalid battery parameters." + exception.getMessage());
+            return;
+        }
+
 
         System.out.println("Battery capacity:" + battery.getBatteryCapacityMWh() + "MWh");
         System.out.println("Max charging power:" + battery.getMaxChargeMW() + "MW");
@@ -79,7 +94,7 @@ public class Main {
                 }
             }
             if (schedulingPrices.isEmpty()) {
-                System.out.println("No prices available fpr this period");
+                System.out.println("No prices available for this period.");
                 return;
 
 
@@ -90,7 +105,7 @@ public class Main {
             PriceInterval firstInterval = schedulingPrices.get(0);
             PriceInterval lastInterval = schedulingPrices.get(schedulingPrices.size() - 1);
             if (!firstInterval.getStartTime().toInstant().equals(expectedStart.toInstant()) || !lastInterval.getEndTime().toInstant().equals(expectedEnd.toInstant())) {
-                System.out.println("Complete price data for the selected and following day");
+                System.out.println("Complete price data is required for the selected and following day");
                 return;
             }
             BatteryOptimizationResult dailyFinancialResult = optimizer.getDailyResult(periodResult, selectedDate);
@@ -147,7 +162,10 @@ public class Main {
     } catch(
     IOException exception){
         System.out.println("The file could not be read." + exception.getMessage());
-    }
+
+        } catch (IllegalStateException exception){
+            System.out.println("A valid schedule cannot be created. "+ exception.getMessage());
+        }
 
 }
 }
