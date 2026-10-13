@@ -39,8 +39,7 @@ public class PriceCSVReader {
             if(i==0 && line.startsWith("\uFEFF")){
             line=line.substring(1);}
             if(line.isBlank()){
-                PriceInterval previousLine = datesAndPrices.get(datesAndPrices.size()-1);
-                throw new IllegalArgumentException("There is empty row after" + previousLine.getStartTime().format(dataFormat));
+                throw new IllegalArgumentException("Empty CSV row at line" + (i+1)+ ".");
             }
             try {
                     PriceInterval interval = parseLine(line);
@@ -53,17 +52,14 @@ public class PriceCSVReader {
                     }
                     datesAndPrices.add(interval);
 
-            } catch(IllegalArgumentException exception){
-                PriceInterval prevLine = datesAndPrices.get(datesAndPrices.size()-1);
-                throw new IllegalArgumentException("There is an invalid row after"+ prevLine.getStartTime().format(dataFormat),exception);
+            } catch(IllegalArgumentException | java.time.DateTimeException exception){
+
+                throw new IOException("Ivalid CSV data at line "+ (i+1) + ": "+ exception.getMessage(),exception);
             }
-            catch (java.time.DateTimeException exception){
-                PriceInterval preLine=datesAndPrices.get(datesAndPrices.size()-1);
-                throw new IllegalArgumentException("There is invalid date or time after this line"+ preLine.getStartTime().format(dataFormat),exception);
-            }
+
         }
         if (datesAndPrices.isEmpty()){
-            throw new IllegalArgumentException("The price and date list/csv file is empty.");
+            throw new IOException("The price and date list/csv file is empty.");
         }
 
         return datesAndPrices;
