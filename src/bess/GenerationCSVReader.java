@@ -17,7 +17,7 @@ import java.util.List;
 public class GenerationCSVReader {
     private static final ZoneId timeZone=ZoneId.of("Europe/Sofia");
     private static final  DateTimeFormatter startFormat=DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm").withResolverStyle(ResolverStyle.STRICT);
-    private static final  DateTimeFormatter endFormat=DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm").withResolverStyle(ResolverStyle.STRICT);
+    private static final  DateTimeFormatter endFormat=DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
     public GenerationRecord parseLine(String line){
         String[] columns=line.split(";",-1);
         if(columns.length !=2){
@@ -69,7 +69,7 @@ public class GenerationCSVReader {
         List<String> lines=Files.readAllLines(path, StandardCharsets.UTF_8);
         List<GenerationRecord> records=new ArrayList<>();
         for(int i=0; i<lines.size();i++){
-            String line =lines.get(1);
+            String line =lines.get(i);
             if(i==0 && line.startsWith("\uFEFF")){
                 line=line.substring(1);
             }
