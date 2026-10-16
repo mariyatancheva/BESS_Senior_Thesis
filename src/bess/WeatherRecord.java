@@ -6,8 +6,8 @@ public class WeatherRecord {
     private final Instant time;
     private final double temperature;
     private final double cloudCoverPercentage;
-    private final double radiationWm2;
-    public WeatherRecord(Instant time, double temperature, double cloudCoverPercentage, double radiationWm2){
+    private final double radiation;
+    public WeatherRecord(Instant time, double temperature, double cloudCoverPercentage, double radiation){
         this.time=Objects.requireNonNull(time,"Weather time cannot be null.");
         if(!Double.isFinite(temperature)){
             throw new IllegalArgumentException("Temperature must be a finite number.");
@@ -17,7 +17,7 @@ public class WeatherRecord {
         }
         this.temperature =temperature;
         this.cloudCoverPercentage=cloudCoverPercentage;
-        this.radiationWm2=radiationWm2;
+        this.radiation=radiation;
     }
     public Instant getTime(){
         return time;
@@ -30,6 +30,6 @@ public class WeatherRecord {
     }
 
     public double getRadiationWm2() {
-        return radiationWm2;
+        return radiation;
     }
 }
