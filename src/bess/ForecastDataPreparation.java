@@ -11,7 +11,7 @@ public class ForecastDataPreparation {
     public List<HourlyGenerationData> aggregateHourly(List<GenerationRecord> records){
         Objects.requireNonNull(records,"Generation recorods cannot be null");
         if(records.isEmpty()){
-            throw new IllegalArgumentException("Generatio records cannot be empty. ");
+            throw new IllegalArgumentException("Generation records cannot be empty. ");
         }
         if (records.size()%4!=0){
             throw new IllegalArgumentException("There is a missing interval.");
@@ -45,7 +45,7 @@ public class ForecastDataPreparation {
     }
     public List<TrainingRow> combineData(List<HourlyGenerationData> generation, List<WeatherRecord> weather){
         Objects.requireNonNull(generation,"Generation cannot be null");
-        Objects.requireNonNull(generation,"Weather cannot be null");
+        Objects.requireNonNull(weather,"Weather cannot be null");
         if(generation.isEmpty() || weather.isEmpty()){
             throw new IllegalArgumentException("Generation and weather data cannot be empty.");
         }

@@ -55,6 +55,23 @@ public class GenerationCheck {
                 throw new IllegalStateException("Total energy charges during aggregation. ");
             }
             System.out.println("Hourly aggregation check passed.");
+            WeatherCSVReader weatherReader = new WeatherCSVReader();
+            List<WeatherRecord> weatherRecords=weatherReader.readWeather(Path.of("data/weather.csv"));
+            List<ForecastDataPreparation.TrainingRow> trainingRows=preparation.combineData(hourlyRecords,weatherRecords);
+            if(trainingRows.size() != hourlyRecords.size()){
+                throw new IllegalStateException("Some generation houts were lost during matching process.");
+            }
+            for(int i=0;i<trainingRows.size();i++){
+                ForecastDataPreparation.TrainingRow row=trainingRows.get(i);
+                HourlyGenerationData original =hourlyRecords.get(i);
+                if(!row.startTime().equals(original.getStartTime())||Double.compare(row.energyKWh(), original.getEnergyKWh()) !=0){
+                    throw new IllegalStateException("Generation data changed during matching");
+                }
+            }
+            System.out.println("Combined records: "+ trainingRows.size());
+            System.out.println("First combined hour UTC: "+ trainingRows.get(0).startTime());
+            System.out.println("Last combined hour UTC: "+ trainingRows.get(trainingRows.size()-1).startTime());
+            System.out.println("Data matching check passed.");
             System.out.println("Generation data check passed.");
         } catch (IOException exception){
             System.out.println("Generation data check failed "+ exception.getMessage());
