@@ -34,6 +34,27 @@ public class GenerationCheck {
             if(autumnCount !=100 || springCount !=92){
                 throw new IllegalStateException("Unexcpeted interval count n a clock chang day");
             }
+            ForecastDataPreparation preparation=new ForecastDataPreparation();
+            List<HourlyGenerationData> hourlyRecords= preparation.aggregateHourly(records);
+            double originalEnergy=0;
+            for(GenerationRecord record:records){
+                originalEnergy+= record.getEnergyKWh();
+            }
+            double aggregatedEnergy=0;
+            for(HourlyGenerationData record : hourlyRecords){
+                aggregatedEnergy+=record.getEnergyKWh();
+            }
+            System.out.println("Hourly records: "+hourlyRecords.size());
+            System.out.printf("Energy before aggregation: %.2f kWh%n ",originalEnergy);
+            System.out.printf("Energy after aggregation: %.2f kWh%n ",aggregatedEnergy);
+            if(hourlyRecords.size() !=records.size()/4){
+                throw new IllegalArgumentException("Unexpected hourly record count. ");
+            }
+            double tolerance= Math.max(1e-6,Math.abs(originalEnergy)*1e-12);
+            if(Math.abs(originalEnergy-aggregatedEnergy)>tolerance){
+                throw new IllegalStateException("Total energy charges during aggregation. ");
+            }
+            System.out.println("Hourly aggregation check passed.");
             System.out.println("Generation data check passed.");
         } catch (IOException exception){
             System.out.println("Generation data check failed "+ exception.getMessage());

@@ -17,6 +17,9 @@ public class WeatherRecord {
         }
         this.temperature =temperature;
         this.cloudCoverPercentage=cloudCoverPercentage;
+        if(!Double.isFinite(radiation)|| radiation<0){
+            throw new IllegalArgumentException("Radiation must be a finite and positive number.");
+        }
         this.radiation=radiation;
     }
     public Instant getTime(){

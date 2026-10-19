@@ -4,6 +4,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ForecastDataPreparation {
     public List<HourlyGenerationData> aggregateHourly(List<GenerationRecord> records){
@@ -30,7 +32,7 @@ public class ForecastDataPreparation {
             for(int j=0; j<4; j++){
                 GenerationRecord record=records.get(i+j);
                 Instant expectedStart=hourStart.plusSeconds(j*900L);
-                if(!record.getStartTime().equals(expectedStart)|| !record.getStartTime().equals(expectedStart.plusSeconds(900))){
+                if(!record.getStartTime().equals(expectedStart)|| !record.getEndTime().equals(expectedStart.plusSeconds(900))){
                     throw new IllegalArgumentException("Invalid 15-minute interval in hour."+hourStart);
                 }
                 hourlyEnergyKWh+= record.getEnergyKWh();
@@ -38,5 +40,30 @@ public class ForecastDataPreparation {
             hourlyRecords.add(new HourlyGenerationData(hourStart,hourlyEnergyKWh));
         }
         return hourlyRecords;
+    }
+    public record TrainingRow(Instant startTime, double energyKWh, double temperature, double cloudCoverPercentage, double radiation){
+    }
+    public List<TrainingRow> combineData(List<HourlyGenerationData> generation, List<WeatherRecord> weather){
+        Objects.requireNonNull(generation,"Generation cannot be null");
+        Objects.requireNonNull(generation,"Weather cannot be null");
+        if(generation.isEmpty() || weather.isEmpty()){
+            throw new IllegalArgumentException("Generation and weather data cannot be empty.");
+        }
+        Map<Instant, WeatherRecord> weatherByTime = new HashMap<>();
+        for(WeatherRecord record:weather){
+            if(weatherByTime.containsKey(record.getTime())){
+                throw new IllegalArgumentException("Repeated weather time"+record.getTime());
+            }
+            weatherByTime.put(record.getTime(),record);
+        }
+        List<TrainingRow> combinedRecords=new ArrayList<>();
+        for(HourlyGenerationData hour:generation){
+            WeatherRecord matchingWeather= weatherByTime.get(hour.getEndTime());
+            if(matchingWeather==null){
+                throw new IllegalArgumentException("Missing weather data for hour ending at:" + hour.getEndTime());
+            }
+            combinedRecords.add(new TrainingRow(hour.getStartTime(),hour.getEnergyKWh(),matchingWeather.getTemperature(),matchingWeather.getCloudCoverPercentage(),matchingWeather.getRadiationWm2()));
+        }
+        return combinedRecords;
     }
 }
