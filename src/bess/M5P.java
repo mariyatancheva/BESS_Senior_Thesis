@@ -7,6 +7,24 @@ public class M5P {
     public record Split(int featureIndex, double threshold,double gain ){
 
     }
+    public static class Node{
+        private final LinearModel model;
+        private final int sampleCount;
+        private int featureIndex=-1;
+        private double threshold;
+        private Node left;
+        private Node right;
+        private Node(LinearModel model, int sampleCount){
+            this.model=Objects.requireNonNull(model,"Node model cannot  be null.");
+            if(sampleCount<1){
+                throw new IllegalArgumentException("A node must contain at least one training record.");
+            }
+            this.sampleCount=sampleCount;
+        }
+        private boolean isLeaf(){
+            return left==null &&right==null;
+        }
+    }
     public Split findBestSplit(double[][] features, double[] targets, int minSamplesLeaf) {
         Objects.requireNonNull(features, "Features cannot be null");
         Objects.requireNonNull(targets, "Targets cannot be null");
