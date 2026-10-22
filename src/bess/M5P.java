@@ -11,6 +11,7 @@ public class M5P {
     private final LinearRegression regression=new LinearRegression();
     private Node root;
     private int featureCount;
+    private static final double smoothingConstant=15.0;
     public record Split(int featureIndex, double threshold,double gain ){
 
     }
@@ -252,6 +253,9 @@ public class M5P {
         return countLeaves(node.left)+countLeaves(node.right);
     }
     public double predict(double[] features){
+        return predict(features,true);
+    }
+    public double predict(double[] features, boolean useSmoothing){
         if(root==null){
             throw new IllegalStateException("The model must be trained before prediction.");
         }
@@ -264,16 +268,10 @@ public class M5P {
                 throw new IllegalArgumentException("Features must be finite");
             }
         }
-        Node current= root;
-        while(!current.isLeaf()){
-            double value=features[current.featureIndex];
-            if(value<=current.threshold){
-                current=current.left;
-            } else{
-                current=current.right;
-            }
-        }
-        return current.model.predict(features);
+       if(useSmoothing){
+           return predictSmoothed(root,features);
+       }
+       return predictFromNode(root, features);
     }
     public Split findBestSplit(double[][] features, double[] targets, int minSamplesLeaf) {
         Objects.requireNonNull(features, "Features cannot be null");
@@ -384,5 +382,25 @@ public class M5P {
         }
         double variance=sumSquaredDiff/values.length;
         return Math.sqrt(variance);
+    }
+    private double predictSmoothed(Node node, double[] features){
+        if(node.isLeaf()){
+            return node.model.predict(features);
+        }
+        Node child;
+        if(features[node.featureIndex]<=node.threshold){
+            child=node.left;
+        }else{
+            child=node.right;
+        }
+        double childPrediction=predictSmoothed(child,features);
+        double parentPrediction=node.model.predict(features);
+        double childWeight=child.sampleCount/(child.sampleCount+smoothingConstant);
+        double parentWeight=smoothingConstant/(child.sampleCount+smoothingConstant);
+        double prediction=childWeight*childPrediction+parentWeight*parentPrediction;
+        if(!Double.isFinite(prediction)){
+            throw new IllegalStateException("Smoothed prediction is not finite");
+        }
+        return prediction;
     }
 }
