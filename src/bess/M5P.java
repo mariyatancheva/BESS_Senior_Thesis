@@ -1,4 +1,5 @@
 package bess;
+import javax.sound.sampled.Line;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
@@ -43,6 +44,7 @@ public class M5P {
     }
     private Node buildTree(double[][] features, double[] targets, int depth){
         LinearModel model=regression.fit(features,targets);
+        model=simplifyLinearModel(model,features, targets);
         Node node=new Node(model,features.length);
         if(depth>=maxDepth || features.length/2<minSamplesLeaf){
             return node;
@@ -108,6 +110,80 @@ public class M5P {
             errorLength=Math.hypot(errorLength,error/scale);
         }
         return errorLength;
+    }
+    private LinearModel simplifyLinearModel(LinearModel initialModel, double[][] features, double[] targets){
+        int featureCount=features[0].length;
+        boolean[] active=new boolean[featureCount];
+        Arrays.fill(active,true);
+        LinearModel currentModel= initialModel;
+        double currentScore=adjustedModelError(currentModel,features,targets);
+        double tolerance=1e-10*Math.max(1.0,standardDev(targets));
+        while(true){
+            int  featureToRemove=-1;
+            LinearModel bestModel=currentModel;
+            double bestScore=currentScore;
+            for(int j=0; j<featureCount;j++){
+                if(!active[j]){
+                    continue;
+                }
+                boolean[] candidateActive=active.clone();
+                candidateActive[j]=false;
+                LinearModel candidateModel= fitSelectedModel(features,targets,candidateActive);
+                double candidateScore=adjustedModelError(candidateModel, features, targets);
+                boolean acceptable=candidateScore<=currentScore+tolerance;
+                if(acceptable &&(featureToRemove==-1|| candidateScore<bestScore)){
+                    featureToRemove=j;
+                    bestModel=candidateModel;
+                    bestScore=candidateScore;
+                }
+            }
+            if (featureToRemove == -1){
+                return currentModel;
+            }
+            active[featureToRemove]=false;
+            currentModel=bestModel;
+            currentScore=bestScore;
+        }
+    }
+    private LinearModel fitSelectedModel(double[][] features, double[] targets, boolean[] active){
+        int selectedCount=0;
+        for(boolean selected:active){
+            if(selected){
+                selectedCount++;
+            }
+        }
+        double [][] reducedFeatures=new double[features.length][selectedCount];
+        for(int i=0;i<features.length;i++){
+            int columnIndex=0;
+            for(int j=0;j< active.length;j++){
+                if(active[j]){
+                    reducedFeatures[i][columnIndex]=features[i][j];
+                    columnIndex++;
+                }
+
+            }
+        }
+        LinearModel reducedModel=regression.fit(reducedFeatures,targets);
+        double[] reducedCoefficients=reducedModel.getCoefficients();
+        double[] fullCoefficients=new double[active.length];
+        int coefficientIndex=0;
+        for(int j=0; j<active.length;j++){
+            if(active[j]){
+                fullCoefficients[j]=reducedCoefficients[coefficientIndex];
+                coefficientIndex++;
+            }
+        }
+        return new LinearModel(reducedModel.getIntercept(),fullCoefficients);
+    }
+    private double adjustedModelError(LinearModel model, double[][] features, double[] targets){
+        Node temporaryNode=new Node(model, targets.length);
+        double error=calculateRMSE(temporaryNode,features,targets,false);
+        int parameters=countModelParameters(model);
+        double score=error*pruningFactor(targets.length,parameters);
+        if(!Double.isFinite(score)){
+            throw new IllegalStateException("Adjusted model error is not finite.");
+        }
+        return score;
     }
     private void pruneNode(Node node, double[][] features, double[] targets){
         if(node.isLeaf()){
