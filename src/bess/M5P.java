@@ -4,6 +4,12 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public class M5P {
+    private static final int minSamplesLeaf=4;
+    private static final int maxDepth=20;
+    private static final double minRelativeGain=1e-6;
+    private final LinearRegression regression=new LinearRegression();
+    private Node root;
+    private int featureCount;
     public record Split(int featureIndex, double threshold,double gain ){
 
     }
@@ -24,6 +30,89 @@ public class M5P {
         private boolean isLeaf(){
             return left==null &&right==null;
         }
+    }
+    public void fit(double[][] feautures, double[] targets){
+        Objects.requireNonNull(feautures,"Features cannot be null.");
+        Objects.requireNonNull(targets,"Targets cannot be null.");
+        if(feautures.length==0){
+            throw new IllegalArgumentException("Training data cannot be empty");
+        }
+        Node trainedRoot= buildTree(feautures, targets,0);
+        root=trainedRoot;
+        featureCount=feautures[0].length;
+    }
+    private Node buildTree(double[][] features, double[] targets, int depth){
+        LinearModel model=regression.fit(features,targets);
+        Node node=new Node(model,features.length);
+        if(depth>=maxDepth || features.length/2<minSamplesLeaf){
+            return node;
+        }
+        Split split= findBestSplit(features, targets, minSamplesLeaf);
+        if(split==null){
+            return node;
+        }
+        double currentSD= standardDev(targets);
+        if(split.gain()<=minRelativeGain*currentSD){
+            return node;
+        }
+        int feature =split.featureIndex();
+        double threshold=split.threshold();
+        int leftCount=0;
+        for(int i=0; i<features.length;i++){
+            if(features[i][feature]<=threshold){
+                leftCount++;
+            }
+        }
+        int rightCount=features.length-leftCount;
+        if(leftCount<minSamplesLeaf || rightCount<minSamplesLeaf){
+            throw new IllegalArgumentException("The selected split creates an invalid group size");
+        }
+        double[][] leftFeatures=new double[leftCount][];
+        double[][] rightFeatures=new double[rightCount][];
+        double[] leftTargets= new double[leftCount];
+        double[] rightTargets= new double[rightCount];
+        int leftIndex=0;
+        int rightIndex=0;
+        for(int i=0;i<features.length;i++){
+            if(features[i][feature]<=threshold){
+                leftFeatures[leftIndex]=features[i];
+                leftTargets[leftIndex]=targets[i];
+                leftIndex++;
+            } else {
+                rightFeatures[rightIndex]=features[i];
+                rightTargets[rightIndex]=targets[i];
+                rightIndex++;
+            }
+        }
+        node.featureIndex=feature;
+        node.threshold=threshold;
+        node.left=buildTree(leftFeatures,leftTargets,depth+1);
+        node.right=buildTree(rightFeatures,rightTargets,depth+1);
+        return node;
+    }
+    public double predict(double[] features){
+        if(root==null){
+            throw new IllegalStateException("The model must be trained before prediction.");
+        }
+        Objects.requireNonNull(features,"Features cannot be null");
+        if(features.length !=featureCount){
+            throw new IllegalArgumentException("Unexpected number of features.");
+        }
+        for(double value: features){
+            if(!Double.isFinite(value)){
+                throw new IllegalArgumentException("Features must be finite");
+            }
+        }
+        Node current= root;
+        while(!current.isLeaf()){
+            double value=features[current.featureIndex];
+            if(value<=current.threshold){
+                current=current.left;
+            } else{
+                current=current.right;
+            }
+        }
+        return current.model.predict(features);
     }
     public Split findBestSplit(double[][] features, double[] targets, int minSamplesLeaf) {
         Objects.requireNonNull(features, "Features cannot be null");
