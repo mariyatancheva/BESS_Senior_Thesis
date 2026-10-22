@@ -75,6 +75,37 @@ public class M5PCheck {
         checkClose(stepTree.predict(new double[]{6.5}),100,"Right prediction after pruning");
         System.out.println("Useful split retention check passed");
 
+        double[][] selectionFeatures=new double[8][2];
+        double[] selectionTargets=new double[8];
+        double[] firstFeature={
+                -1,-1,-1,-1,
+                1,1,1,1
+        };
+        double[] secondFeature={
+                -1,-1,1,1,
+                -1,-1,1,1
+        };
+        double[] noise={
+                -1,1,-1,1,
+                -1,1,-1,1
+        };
+        for(int i=0;i<selectionTargets.length;i++){
+            selectionFeatures[i][0]=firstFeature[i];
+            selectionFeatures[i][1]=secondFeature[i];
+            selectionTargets[i]=10+5*firstFeature[i]+0.1*secondFeature[i]+noise[i];
+        }
+        LinearRegression selectionRegression=new LinearRegression();
+        LinearModel fullModel=selectionRegression.fit(selectionFeatures,selectionTargets);
+        checkClose(fullModel.getCoefficients()[1],0.1,"Second coefficient before simplification");
+        M5P selectionAlgorithm=new M5P();
+        LinearModel simplifiedModel=selectionAlgorithm.simplifyLinearModel(fullModel,selectionFeatures,selectionTargets);
+        double[] selectedCoefficients= simplifiedModel.getCoefficients();
+        checkClose(selectedCoefficients[0],5,"Useful coefficient after simplification");
+        checkClose(simplifiedModel.getIntercept(),10,"Intercept after simplification");
+        checkClose(simplifiedModel.predict(new double[]{1,1}),15,"Prediction with second feature 1");
+        checkClose(simplifiedModel.predict(new double[]{1,1}),15,"Pprediction with second feature 1");
+        System.out.println("Linear model simplification check passed");
+
     }
     public static void checkClose(double actual, double expected, String description){
         if(!Double.isFinite(actual)|| Math.abs(actual-expected)>1e-8){

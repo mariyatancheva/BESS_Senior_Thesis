@@ -111,7 +111,7 @@ public class M5P {
         }
         return errorLength;
     }
-    private LinearModel simplifyLinearModel(LinearModel initialModel, double[][] features, double[] targets){
+     LinearModel simplifyLinearModel(LinearModel initialModel, double[][] features, double[] targets){
         int featureCount=features[0].length;
         boolean[] active=new boolean[featureCount];
         Arrays.fill(active,true);
