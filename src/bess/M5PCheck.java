@@ -55,6 +55,25 @@ public class M5PCheck {
             System.out.println("Prediction before training check passed");
         }
         System.out.println("All basic tree checks passed. ");
+        double[][] pruningFeatures={
+                {1}, {2}, {3}, {4},
+                {5}, {6}, {7}, {8}
+        };
+        M5P linearTree= new M5P();
+        linearTree.fit(pruningFeatures, new double[]{7,9,11,13,15,17,19,21});
+        if(linearTree.getLeafCount() !=1){
+            throw new AssertionError("A single linear model should be sufficient. ");
+        }
+        checkClose(linearTree.predict(new double[]{4.5}),14,"Prediction after pruning");
+        System.out.println("Unecessary split pruning check passed.");
+        M5P stepTree=new M5P();
+        stepTree.fit(pruningFeatures, new double[]{10,10,10,10,100,100,100,100});
+        if(stepTree.getLeafCount() !=2){
+            throw new AssertionError("The useful split should be retained");
+        }
+        checkClose(stepTree.predict(new double[]{2.5}),10,"Left prediction after pruning");
+        checkClose(stepTree.predict(new double[]{6.5}),100,"Right prediction after pruning");
+        System.out.println("Useful split retention check passed");
 
     }
     public static void checkClose(double actual, double expected, String description){

@@ -88,7 +88,92 @@ public class M5P {
         node.threshold=threshold;
         node.left=buildTree(leftFeatures,leftTargets,depth+1);
         node.right=buildTree(rightFeatures,rightTargets,depth+1);
+        pruneNode(node,features,targets);
         return node;
+    }
+    private double calculateRMSE(Node node, double[][] features, double[] targets,boolean useSubtree){
+        double errorLength=0;
+        double scale=Math.sqrt(targets.length);
+        for(int i=0;i<targets.length;i++){
+            double prediction;
+            if(useSubtree){
+                prediction=predictFromNode(node,features[i]);
+            } else {
+                prediction=node.model.predict(features[i]);
+            }
+            double error= prediction-targets[i];
+            if (!Double.isFinite(error)){
+                throw new IllegalStateException("Prediction error is not finite");
+            }
+            errorLength=Math.hypot(errorLength,error/scale);
+        }
+        return errorLength;
+    }
+    private void pruneNode(Node node, double[][] features, double[] targets){
+        if(node.isLeaf()){
+            return;
+        }
+        double modelError= calculateRMSE(node, features, targets, false);
+        double subtreeError= calculateRMSE(node, features, targets, true);
+        int modelParameters = countModelParameters(node.model);
+        int subtreeParameters= countSubtreeParameters(node);
+        double adjustedModelError=modelError*pruningFactor(node.sampleCount, modelParameters);
+        double adjustedSubtreeError=subtreeError*pruningFactor(node.sampleCount, subtreeParameters);
+        if(!Double.isFinite(adjustedModelError)|| !Double.isFinite(adjustedSubtreeError)) {
+            throw new IllegalStateException("Pruning error is not finite.");
+        }
+        double tolerance=1e-10*Math.max(1.0,standardDev(targets));
+        if(adjustedModelError<=adjustedSubtreeError+tolerance){
+            node.left=null;
+            node.right=null;
+            node.featureIndex=-1;
+            node.threshold=0;
+
+        }
+    }
+    private double predictFromNode(Node node, double[] features){
+        Node current=node;
+        while(!current.isLeaf()){
+            if(features[current.featureIndex]<= current.threshold){
+                current=current.left;
+            } else{
+                current=current.right;
+            }
+        }
+        return current.model.predict(features);
+    }
+    private int countModelParameters(LinearModel model){
+        int count =1;
+        for(double coefficient:model.getCoefficients()){
+            if(coefficient !=0.0){
+                count++;
+            }
+        }
+        return count;
+    }
+    private int countSubtreeParameters(Node node){
+        if(node.isLeaf()){
+            return countModelParameters(node.model);
+        }
+            return countSubtreeParameters(node.left)+countSubtreeParameters(node.right)+1;
+    }
+    private double pruningFactor(int sampleCount, int parameterCount){
+        if(sampleCount<=parameterCount){
+            return 10.0;
+        }
+        return (sampleCount+ 2.0*parameterCount)/(sampleCount-parameterCount);
+    }
+    public int getLeafCount(){
+        if(root==null){
+            throw new IllegalStateException("The model must be trained first. ");
+        }
+        return countLeaves(root);
+    }
+    private int countLeaves(Node node){
+        if(node.isLeaf()){
+            return 1;
+        }
+        return countLeaves(node.left)+countLeaves(node.right);
     }
     public double predict(double[] features){
         if(root==null){
