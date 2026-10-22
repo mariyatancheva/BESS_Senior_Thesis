@@ -112,6 +112,27 @@ public class M5PCheck {
         checkClose(stepTree.predict(new double[]{6.5}),expectedRightSmoothed,"Right smoothed prediction");
         checkClose(linearTree.predict(new double[]{4.5}),14,"Single leaf prediction with smoothing enabled");
         System.out.println("smoothing check passed");
+        double [][] multiLevelFeatures=new double[16][1];
+        for(int i=0;i<multiLevelFeatures.length;i++){
+            multiLevelFeatures[i][0]=i+1;
+        }
+        double[] multiLevelTargets= {
+                10,10,10,10,
+                100,100,100,100,
+                190,190,190,190,
+                280,280,280,280
+        };
+        M5P multiLevelTree=new M5P();
+        multiLevelTree.fit(multiLevelFeatures,multiLevelTargets);
+        if(multiLevelTree.getLeafCount()!=4){
+            throw new AssertionError("Expected 4 leaves received"+multiLevelTree.getLeafCount());
+        }
+        checkClose(multiLevelTree.predict(new double[]{2.5},false),10,"Firstg group without smoothing");
+        checkClose(multiLevelTree.predict(new double[]{14.5},false),280,"Last group without smoothing");
+        double rightAfterParent=(4.0*280.0+15.0*(1885.0/7.0)/(4.0+15.0));
+        double expectedRight=(8.0*rightAfterParent+15.0*(4625.0/17.0))/(8.0+15.0);
+        checkClose(multiLevelTree.predict(new double[]{14.5}),expectedRight,"Right path with two smoothing steps");
+        System.out.println("Multi-level smoothing check passed");
 
     }
     public static void checkClose(double actual, double expected, String description){
