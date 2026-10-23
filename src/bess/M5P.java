@@ -5,13 +5,32 @@ import java.util.Comparator;
 import java.util.Objects;
 
 public class M5P {
-    private static final int minSamplesLeaf=4;
-    private static final int maxDepth=20;
+    private final int minSamplesLeaf;
+    private final int maxDepth;
+    private final double smoothingConstant;
     private static final double minRelativeGain=1e-6;
     private final LinearRegression regression=new LinearRegression();
     private Node root;
     private int featureCount;
-    private static final double smoothingConstant=15.0;
+    public M5P(){
+        this(4,20,15.0);
+    }
+    public M5P(int minSamplesLeaf,int maxDepth,double smoothingConstant){
+        if(minSamplesLeaf<1){
+            throw new IllegalArgumentException("Minimum leaf sizee must bee positive");
+
+        }
+        if(maxDepth<0){
+            throw new IllegalArgumentException("Maximum depth cannot be negative");
+        }
+        if(!Double.isFinite(smoothingConstant)|| smoothingConstant<0){
+            throw new IllegalArgumentException("Smoothing constant ust be finite and non negative");
+
+        }
+        this.minSamplesLeaf=minSamplesLeaf;
+        this.maxDepth=maxDepth;
+        this.smoothingConstant=smoothingConstant;
+    }
     public record Split(int featureIndex, double threshold,double gain ){
 
     }
