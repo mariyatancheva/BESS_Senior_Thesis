@@ -129,7 +129,7 @@ public class M5PCheck {
         }
         checkClose(multiLevelTree.predict(new double[]{2.5},false),10,"Firstg group without smoothing");
         checkClose(multiLevelTree.predict(new double[]{14.5},false),280,"Last group without smoothing");
-        double rightAfterParent=(4.0*280.0+15.0*(1885.0/7.0)/(4.0+15.0));
+        double rightAfterParent=(4.0*280.0+15.0*(1885.0/7.0))/(4.0+15.0);
         double expectedRight=(8.0*rightAfterParent+15.0*(4625.0/17.0))/(8.0+15.0);
         checkClose(multiLevelTree.predict(new double[]{14.5}),expectedRight,"Right path with two smoothing steps");
         System.out.println("Multi-level smoothing check passed");
