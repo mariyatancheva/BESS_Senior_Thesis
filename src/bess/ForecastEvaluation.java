@@ -10,7 +10,7 @@ import java.util.Comparator;
 public class ForecastEvaluation {
     private record Metrics(double mae, double rmse, int negativePredictions){
     }
-    private record ErrorRow(ForecastDataPreparation.TrainingRow row,double linearPrediction,double treePrediction){
+    private record ErrorRow(ForecastDataPreparation.TrainingRow row,double linearPrediction,double treePrediction, double unsmoothedPrediction){
         double linearError(){
             return Math.abs(linearPrediction-row.energyKWh());
         }
@@ -104,7 +104,7 @@ public class ForecastEvaluation {
             printMetrics("Selected M5P — validation",bestValidationMetrics, validationTargets.length);
             M5P validationTree=new M5P(bestLeaf,bestDepth,bestSmoothing);
             validationTree.fit(trainingFeatures,trainingTargets);
-            diagnose (rows.subList(trainingEnd, validationEnd), validationFeatures, validationTargets, validationLinearModel::predict,validationTree::predict);
+            diagnose (rows.subList(trainingEnd, validationEnd), validationFeatures, validationTargets, validationLinearModel::predict,validationTree::predict,features->validationTree.predict(features,false));
             double[][] finalTrainingFeatures = Arrays.copyOfRange(allFeatures,0, validationEnd);
             double[] finalTrainingTargets = Arrays.copyOfRange(allTargets,0,validationEnd);
             double[][] testFeatures = Arrays.copyOfRange(allFeatures, validationEnd,totalCount);
@@ -174,15 +174,16 @@ public class ForecastEvaluation {
     private static void printPeriod(String name, List<ForecastDataPreparation.TrainingRow> rows, int start, int end
     ) {System.out.println(name + " period UTC: " + rows.get(start).startTime() + " to " + rows.get(end - 1).startTime().plusSeconds(3600) + " (end exclusive)");
     }
-    private static void diagnose(List<ForecastDataPreparation.TrainingRow> rows,double[][] features, double[]targets, ToDoubleFunction<double[]> linearPredictor,ToDoubleFunction<double[]> treePredictor){
+    private static void diagnose(List<ForecastDataPreparation.TrainingRow> rows,double[][] features, double[]targets, ToDoubleFunction<double[]> linearPredictor,ToDoubleFunction<double[]> treePredictor, ToDoubleFunction<double[]> unsmoothedPredictor){
         List<ErrorRow> errors=new ArrayList<>();
         for(int i=0;i< rows.size();i++){
             double linearPrediction=linearPredictor.applyAsDouble(features[i]);
             double treePrediction=treePredictor.applyAsDouble(features[i]);
-            if(!Double.isFinite(linearPrediction)|| !Double.isFinite(treePrediction)){
+            double unsmoothedPrediction=unsmoothedPredictor.applyAsDouble(features[i]);
+            if(!Double.isFinite(linearPrediction)|| !Double.isFinite(treePrediction) ||!Double.isFinite(unsmoothedPrediction)){
                 throw new IllegalStateException("Non-finite prediction during diagnisis");
             }
-            errors.add(new ErrorRow(rows.get(i),linearPrediction,treePrediction));
+            errors.add(new ErrorRow(rows.get(i),linearPrediction,treePrediction,unsmoothedPrediction));
         }
         System.out.println();
         System.out.println("Validation diagnostics");
@@ -239,13 +240,12 @@ public class ForecastEvaluation {
             System.out.println("No matching records.");
             return;
         }
-        System.out.println("Hour start UTC | Radiation W/m2 | Actual kWh" + " | Linear kWh | M5P kWh" + " | Linear abs. error | M5P abs. error" + " | Extra M5P error");
+        System.out.println("Hour UTC |Radiation|Actual KWh"+"|Linear KWh"+"|M5P without smoothing"+" | M5P with smoothing");
         int limit = Math.min(10, errors.size());
         for (int i = 0; i < limit; i++) {
             ErrorRow error = errors.get(i);
             System.out.printf(
-                    "%s | %.2f | %.2f | %.2f | %.2f"
-                            + " | %.2f | %.2f | %.2f%n", error.row().startTime(),error.row().radiation(),error.row().energyKWh(),error.linearPrediction(),error.treePrediction(),error.linearError(),error.treeError(),error.extraError());
+                    "%s | %.2f | %.2f | %.2f | %.2f%n" + error.row().startTime(),error.row().radiation(),error.row().energyKWh(),error.linearPrediction(),error.unsmoothedPrediction,error.treePrediction());
         }
     }
         }
