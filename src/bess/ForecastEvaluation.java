@@ -104,6 +104,17 @@ public class ForecastEvaluation {
             printMetrics("Selected M5P — validation",bestValidationMetrics, validationTargets.length);
             M5P validationTree=new M5P(bestLeaf,bestDepth,bestSmoothing);
             validationTree.fit(trainingFeatures,trainingTargets);
+            java.time.Instant diagnosticHour=java.time.Instant.parse("2026-06-09T10:00:00Z");
+            for(int i=trainingEnd;i<validationEnd;i++){
+                if(rows.get(i).startTime().equals(diagnosticHour)){
+                    int validationIndex=i-trainingEnd;
+                    System.out.println();
+                    System.out.println("Diagnostic hour:"+diagnosticHour);
+                    System.out.printf("Actual generation: %.2f KWh%n",validationTargets[validationIndex]);
+                    validationTree.printPredictionsDetails(validationFeatures[validationIndex]);
+                    break;
+                }
+            }
             diagnose (rows.subList(trainingEnd, validationEnd), validationFeatures, validationTargets, validationLinearModel::predict,validationTree::predict,features->validationTree.predict(features,false));
             double[][] finalTrainingFeatures = Arrays.copyOfRange(allFeatures,0, validationEnd);
             double[] finalTrainingTargets = Arrays.copyOfRange(allTargets,0,validationEnd);
@@ -116,10 +127,14 @@ public class ForecastEvaluation {
             M5P selectedTree = new M5P(bestLeaf, bestDepth, bestSmoothing);
             selectedTree.fit(finalTrainingFeatures, finalTrainingTargets);
             System.out.println();
-            System.out.println("Results on the lasr 20%");
+            System.out.println("Results on the last 20%");
             printMetrics("Linear regression", measure(testFeatures, testTargets, finalLinearModel::predict), testTargets.length);
             printMetrics("Default M5P", measure(testFeatures,testTargets, defaultTree::predict), testTargets.length);
             printMetrics("Selected M5P",measure(testFeatures,testTargets, selectedTree::predict), testTargets.length);
+            System.out.println("Results after clipping negative results to zero");
+            printMetrics("Linear regression ", measure(testFeatures,testTargets,finalLinearModel::predict,true),testTargets.length);
+            printMetrics("Default M5P ", measure(testFeatures,testTargets,defaultTree::predict,true),testTargets.length);
+            printMetrics("Selected M5P ", measure(testFeatures,testTargets,selectedTree::predict,true),testTargets.length);
             System.out.println("Default M5P leaves: " + defaultTree.getLeafCount());
             System.out.println("Selected M5P leaves: " + selectedTree.getLeafCount());
 
@@ -127,8 +142,10 @@ public class ForecastEvaluation {
             System.out.println("Forecast evaluation failed: " + exception.getMessage());
         }
     }
-    private static Metrics measure(double[][] features, double[] targets, ToDoubleFunction<double[]> predictor
-    ) {
+    private static Metrics measure(double[][] features, double[] targets, ToDoubleFunction<double[]> predictor) {
+        return measure(features,targets,predictor , false);
+    }
+    private static Metrics measure(double[][] features, double[] targets, ToDoubleFunction<double[]> predictor, boolean clipNegative){
         if (targets.length == 0 || features.length != targets.length) {
             throw new IllegalArgumentException(
                     "Evaluation data must be matching and non-empty.");
@@ -146,6 +163,9 @@ public class ForecastEvaluation {
 
             if(prediction < 0) {
                 negativePredictions++;
+            }
+            if (clipNegative){
+                prediction=Math.max(0.0,prediction);
             }
             double error = prediction - targets[i];
             if(!Double.isFinite(error)) {
@@ -169,7 +189,7 @@ public class ForecastEvaluation {
         System.out.println(name);
         System.out.printf("MAE: %.2f kWh%n", metrics.mae());
         System.out.printf("RMSE: %.2f kWh%n", metrics.rmse());
-        System.out.println("Negative predictions: " + metrics.negativePredictions() + "/" + recordCount);
+        System.out.println("Negative predictions before clipping: " + metrics.negativePredictions() + "/" + recordCount);
     }
     private static void printPeriod(String name, List<ForecastDataPreparation.TrainingRow> rows, int start, int end
     ) {System.out.println(name + " period UTC: " + rows.get(start).startTime() + " to " + rows.get(end - 1).startTime().plusSeconds(3600) + " (end exclusive)");
@@ -245,7 +265,7 @@ public class ForecastEvaluation {
         for (int i = 0; i < limit; i++) {
             ErrorRow error = errors.get(i);
             System.out.printf(
-                    "%s | %.2f | %.2f | %.2f | %.2f%n" + error.row().startTime(),error.row().radiation(),error.row().energyKWh(),error.linearPrediction(),error.unsmoothedPrediction,error.treePrediction());
+                    "%s | %.2f | %.2f | %.2f | %.2f | %.2f%n" ,error.row().startTime(),error.row().radiation(),error.row().energyKWh(),error.linearPrediction(),error.unsmoothedPrediction,error.treePrediction());
         }
     }
         }

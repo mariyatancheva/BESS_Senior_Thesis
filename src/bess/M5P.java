@@ -422,4 +422,20 @@ public class M5P {
         }
         return prediction;
     }
+    public void printPredictionsDetails(double[] features){
+        double unsmoothed=predict(features,false);
+        Node current=root;
+        System.out.println("Prediction path: ");
+        while(!current.isLeaf()){
+            int column= current.featureIndex;
+            boolean goLeft=features[column]<=current.threshold;
+            System.out.printf("Feature %d: %.2f <= %.2f -> %s%n",column,features[column],current.threshold,goLeft? "left":"right");
+            current=goLeft? current.left:current.right;
+        }
+        System.out.println("Training records in leaf"+current.sampleCount);
+        System.out.println("Leaf intercept"+current.model.getIntercept());
+        System.out.println("Leaf coefficients"+Arrays.toString(current.model.getCoefficients()));
+        System.out.printf("Prediction without smoothing: %.2f kWh%n",unsmoothed);
+        System.out.printf("Prediction with smoothing: %.2f kWh%n",predict(features,true));
+    }
 }
