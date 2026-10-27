@@ -1,5 +1,5 @@
 package bess;
-import javax.management.InstanceNotFoundException;
+import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.*;
@@ -12,7 +12,22 @@ import java.util.Map;
 public class SolarForecast {
     public static void main (String[] args){
         ZoneId zone= ZoneId.of("Europe/Sofia");
-        LocalDate selectedDate=LocalDate.of(2026,9,3);
+        Scanner scanner=new Scanner(System.in);
+        LocalDate selectedDate;
+        while (true){
+            try{
+                System.out.print("Enter forecast year: ");
+                int year= Integer.parseInt(scanner.nextLine().trim());
+                System.out.print("Enter forecast month (1-12): ");
+                int month= Integer.parseInt(scanner.nextLine().trim());
+                System.out.print("Enter forecast day: ");
+                int day=Integer.parseInt(scanner.nextLine().trim());
+                selectedDate=LocalDate.of(year,month,day);
+                break;
+            } catch(NumberFormatException | DateTimeException exception){
+                System.out.println("Invalid date. Enter a valid day with whole numbers.");
+            }
+        }
         Instant dayStart=selectedDate.atStartOfDay(zone).toInstant();
         Instant dayEnd=selectedDate.plusDays(1).atStartOfDay(zone).toInstant();
         try {
