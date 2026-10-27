@@ -10,10 +10,15 @@ import java.util.List;
 import java.util.Map;
 
 public class SolarForecast {
-    public static void main (String[] args){
-        ZoneId zone= ZoneId.of("Europe/Sofia");
-        Scanner scanner=new Scanner(System.in);
+    public static void main (String[] args) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            run(scanner);
+        }
+    }
+    public static void run(Scanner scanner) {
+        ZoneId zone = ZoneId.of("Europe/Sofia");
         LocalDate selectedDate;
+
         while (true){
             try{
                 System.out.print("Enter forecast year: ");

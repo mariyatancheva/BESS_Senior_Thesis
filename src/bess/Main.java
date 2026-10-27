@@ -2,6 +2,7 @@ package bess;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,17 +12,54 @@ import java.time.LocalDate;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                System.out.println();
+                System.out.println("Solar and BESS planning system");
+                System.out.println("1. BESS scheduling");
+                System.out.println("2. Solar generation forecasting");
+                System.out.println("0. Exit");
+                System.out.print("Choose an option: ");
+
+                if (!scanner.hasNextLine()) {
+                    return;
+                }
+
+                String choice = scanner.nextLine().trim();
+
+                switch (choice) {
+                    case "1":
+                        runBessScheduling(scanner);
+                        break;
+
+                    case "2":
+                        SolarForecast.run(scanner);
+                        break;
+
+                    case "0":
+                        System.out.println("Goodbye!");
+                        return;
+
+                    default:
+                        System.out.println(
+                                "Invalid option. Enter 1, 2 or 0."
+                        );
+                }
+            }
+        }
+    }
+
+    private static void runBessScheduling(Scanner scanner) {
         BatterySpecification battery;
 
         while(true) {
             try {
                 System.out.print("Enter battery capacity in MWh: ");
-                double capacity = scanner.nextDouble();
+                double capacity = Double.parseDouble(scanner.nextLine().trim().replace(',','.'));
                 System.out.print("Enter maximum charging power in MW: ");
-                double maxCharge = scanner.nextDouble();
+                double maxCharge = Double.parseDouble(scanner.nextLine().trim().replace(',','.'));
                 System.out.print("Enter maximum discharging power in MW: ");
-                double maxDischarge = scanner.nextDouble();
+                double maxDischarge = Double.parseDouble(scanner.nextLine().trim().replace(',','.'));
 
                 battery = new BatterySpecification(
                             capacity,
@@ -71,11 +109,11 @@ public class Main {
                     while (true) {
                         try {
                             System.out.print("Enter a year: ");
-                            int year = Integer.parseInt(scanner.next());
+                            int year = Integer.parseInt(scanner.nextLine().trim());
                             System.out.print("Enter a month (1-12): ");
-                            int month = Integer.parseInt(scanner.next());
+                            int month = Integer.parseInt(scanner.nextLine().trim());
                             System.out.print("Enter a day (1-31): ");
-                            int day = Integer.parseInt(scanner.next());
+                            int day = Integer.parseInt(scanner.nextLine().trim());
                             selectedDate = LocalDate.of(year, month, day);
                             break;
                         } catch (NumberFormatException | java.time.DateTimeException exception) {
@@ -141,24 +179,26 @@ public class Main {
                             maxSoC = Math.max(maxSoC, dailyCheck.getCurrentSoC());
                             if (step.getAction() == Battery.DISCHARGE && Math.abs(dailyCheck.getCurrentEnergyMWh() - battery.getMinEnergyMWh()) < 1e-6) {
                                 cycleCount++;
-                                System.out.println("Cycle " + cycleCount);
-                                System.out.println("Start " + cycleStart.format(formatData));
-                                System.out.println("End " + step.getPriceInterval().getEndTime().format(formatData));
-                                System.out.printf("Maximum SoC: %.2f%% %n  ", maxSoC);
-                                double cycleProfitEUR = cycleRevenueEUR - cycleCostEUR;
+
+                                System.out.println("---Cycle " + cycleCount+"---");
+                                System.out.println("Start: " + cycleStart.format(formatData));
+                                System.out.println("End: " + step.getPriceInterval().getEndTime().format(formatData));
+                                System.out.printf("Maximum SoC: %.2f%%%n  ", maxSoC);
                                 System.out.printf("Charging cost: %.2f EUR%n", cycleCostEUR);
                                 System.out.printf("Revenue: %.2f EUR%n", cycleRevenueEUR);
-                                System.out.println("============================");
+
+                                double cycleProfitEUR = cycleRevenueEUR - cycleCostEUR;
+                                System.out.println("===========================");
                                 System.out.printf("Trading profit: %.2f EUR%n%n", cycleProfitEUR);
-                                System.out.println("============================");
+
                                 cycleInprogress = false;
                             }
                         }
                     }
+                    System.out.println();
+                    System.out.println("---Daily summary---");
                     System.out.println("Completed cycles: " + cycleCount);
-                    System.out.println("===============================");
                     System.out.printf("Total trading profit: %.2f EUR%n ", checkedDailyProfit);
-                    System.out.println("===============================");
                     System.out.println("Daily profit matches:" + (Math.abs(checkedDailyProfit - dailyFinancialResult.getProfitEUR())));
                     System.out.println("Daily schedule returned to minimum:" + (Math.abs(dailyCheck.getCurrentEnergyMWh() - battery.getMinEnergyMWh()) < 1e-6));
 
@@ -168,13 +208,13 @@ public class Main {
                 }catch (IllegalArgumentException exception){
                     System.out.println("Invalid data or parameters."+ exception.getMessage());
 
-
                 } catch (IllegalStateException exception) {
                     System.out.println("A valid schedule cannot be created. " + exception.getMessage());
                 }
 
             }
         }
+
 
 
 
