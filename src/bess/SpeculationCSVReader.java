@@ -31,7 +31,7 @@ public class SpeculationCSVReader {
             header=header.substring(1);
         }
         String[] headers=header.split(";",-1);
-        if(headers.length !=4 || !headers[0].trim().equals("Start time") || !headers[1].trim().equals("imbalancePriceEURPerMWh")|| !headers[2].trim().equals("systemImbalanceMWh")|| !headers[3].trim().equals("dayAheadPriceEURPerMWh")){
+        if(headers.length !=4 || !headers[0].trim().equals("startTime") || !headers[1].trim().equals("imbalancePriceEURPerMWh")|| !headers[2].trim().equals("systemImbalanceMWh")|| !headers[3].trim().equals("dayAheadPriceEURPerMWh")){
             throw new IOException("Unexpected speculation CSV columns.");
         }
         List<SpeculationRecord> records=new ArrayList<>();
