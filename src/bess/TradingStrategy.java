@@ -57,7 +57,7 @@ public class TradingStrategy {
         if (dayAheadPrice<buyThresholds[period]){
             return tradePowerMW;
         }
-        if(dayAheadPrice<buyThresholds[period]){
+        if(dayAheadPrice>sellThresholds[period]){
             return -tradePowerMW;
         }
         return 0.0;
