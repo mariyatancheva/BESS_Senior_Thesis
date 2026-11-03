@@ -1,5 +1,6 @@
 package bess;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -81,5 +82,42 @@ public class NSGAII {
         }
         return fronts;
         }
+        private static void calculateCrowdingDistance(List<Candidate> front){
+        Objects.requireNonNull(front,"Front cannot be null.");
+        if(front.isEmpty()){
+            return;
+        }
+        for(Candidate candidate:front){
+            Objects.requireNonNull(candidate,"Candidate cannot be null.");
+            candidate.crowdingDistance=0.0;
+        }
+        addCrowdingForObjective(front,true);
+        addCrowdingForObjective(front,false);
+        }
+        private static void addCrowdingForObjective(List<Candidate> front,boolean useProfit){
+        List<Candidate> sorted=new ArrayList<>(front);
+        sorted.sort(Comparator.comparingDouble(Candidate candidate) -> useProfit? candidate.evaluation.totalProfitEUR: candidate.evaluation.maxDrawdownEUR());
+        int lastIndex=sorted.size()-1;
+        double minimum=useProfit ? sorted.get(0).evaluation.totalProfitEUR() : sorted.get(0).evaluation.maxDrawdownEUR();
+        double maximum=useProfit? sorted.get(lastIndex).evaluation.totalProfitEUR():sorted.get(lastIndex).evaluation.maxDrawdownEUR();
+        if(minimum==maximum){
+            return;
+        }
+        double range=maximum-minimum;
+        if(!Double.isFinite(range)){
+            throw new IllegalStateException("Objective range is not finite");
+        }
+        sorted.get(0).crowdingDistance=Double.POSITIVE_INFINITY;
+        sorted.get(lastIndex).crowdingDistance=Double.POSITIVE_INFINITY;
+        for(int i=1;i<lastIndex;i++){
+            Candidate previous=sorted.get(i-1);
+            Candidate next=sorted.get(i+1);
+            double previousValue=useProfit? previous.evaluation.totalProfitEUR():previous.evaluation.maxDrawdownEUR();
+            double nextValue=useProfit? next.evaluation.totalProfitEUR():next.evaluation.maxDrawdownEUR();
+             double distance=(nextValue-previousValue)/range;
+             sorted.get(i).crowdingDistance+=distance;
+        }
+        }
+
     }
 
