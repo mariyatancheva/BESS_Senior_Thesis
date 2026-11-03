@@ -1,7 +1,7 @@
 package bess;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.zip.DeflaterOutputStream;
-
 
 public class NSGAII {
     private static class Candidate{
@@ -29,4 +29,57 @@ public class NSGAII {
         boolean strictlyBetter= firstProfit>secondProfit || firstDrawdown<secondDrawdown;
         return noWorse && strictlyBetter;
     }
-}
+    private static List<List<Candidate>> nonNominatedSort(List<Candidate> population){
+        Objects.requireNonNull(population,"Population cannot be null.");
+        int size=population.size();
+        List<List<Integer>> dominatedIndices=new ArrayList<>();
+        int[] dominationCount=new int[size];
+        for(int i=0;i<size;i++){
+            Candidate candidate =Objects.requireNonNull(population.get(i),"Candidate cannot be null.");
+            candidate.rank=-1;
+            candidate.crowdingDistance=0.0;
+            dominatedIndices.add(new ArrayList<>());
+        }
+        for(int i=0;i<size;i++){
+            for(int j=i+1;j<size;j++){
+                Candidate first=population.get(i);
+                Candidate second=population.get(j);
+                if(dominates(first,second)){
+                    dominatedIndices.get(i).add(j);
+                    dominationCount[j]++;
+                } else if (dominates(second,first)){
+                    dominatedIndices.get(j).add(i);
+                    dominationCount[i]++;
+                }
+                }
+        }
+        List<Integer> currentFront=new ArrayList<>();
+        for(int i=0;i<size;i++){
+            if(dominationCount[i]==0){
+                population.get(i).rank=0;
+                currentFront.add(i);
+            }
+        }
+        List<List<Candidate>> fronts=new ArrayList<>();
+        int currentRank=0;
+        while (!currentFront.isEmpty()){
+            List<Candidate> front=new ArrayList<>();
+            List<Integer> nextFront=new ArrayList<>();
+            for(int index:currentFront){
+                front.add(population.get(index));
+                for(int dominatedIndex:dominatedIndices.get(index)){
+                    dominationCount[dominatedIndex]--;
+                    if(dominationCount[dominatedIndex]==0){
+                        population.get(dominatedIndex).rank=currentRank+1;
+                        nextFront.add(dominatedIndex);
+                    }
+                }
+            }
+            fronts.add(front);
+            currentFront=nextFront;
+            currentRank++;
+        }
+        return fronts;
+        }
+    }
+
