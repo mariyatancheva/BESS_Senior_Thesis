@@ -26,11 +26,11 @@ public class NSGAII {
         double secondProfit=second.evaluation.totalProfitEUR();
         double firstDrawdown=first.evaluation.maxDrawdownEUR();
         double secondDrawdown=second.evaluation.maxDrawdownEUR();
-        boolean noWorse=firstProfit>=secondProfit || firstDrawdown<secondDrawdown;
+        boolean noWorse=firstProfit>=secondProfit && firstDrawdown<secondDrawdown;
         boolean strictlyBetter= firstProfit>secondProfit || firstDrawdown<secondDrawdown;
         return noWorse && strictlyBetter;
     }
-    private static List<List<Candidate>> nonNominatedSort(List<Candidate> population){
+    private static List<List<Candidate>> nonDominatedSort(List<Candidate> population){
         Objects.requireNonNull(population,"Population cannot be null.");
         int size=population.size();
         List<List<Integer>> dominatedIndices=new ArrayList<>();
@@ -96,7 +96,7 @@ public class NSGAII {
         }
         private static void addCrowdingForObjective(List<Candidate> front,boolean useProfit){
         List<Candidate> sorted=new ArrayList<>(front);
-        sorted.sort(Comparator.comparingDouble(Candidate candidate) -> useProfit? candidate.evaluation.totalProfitEUR: candidate.evaluation.maxDrawdownEUR());
+        sorted.sort(Comparator.comparingDouble((Candidate candidate) -> useProfit? candidate.evaluation.totalProfitEUR(): candidate.evaluation.maxDrawdownEUR()));
         int lastIndex=sorted.size()-1;
         double minimum=useProfit ? sorted.get(0).evaluation.totalProfitEUR() : sorted.get(0).evaluation.maxDrawdownEUR();
         double maximum=useProfit? sorted.get(lastIndex).evaluation.totalProfitEUR():sorted.get(lastIndex).evaluation.maxDrawdownEUR();
