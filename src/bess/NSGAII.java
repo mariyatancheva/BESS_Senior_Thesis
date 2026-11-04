@@ -170,6 +170,33 @@ public class NSGAII {
         }
         return population;
             }
+            private static Candidate selectParent(List<Candidate> population, Random random){
+        Objects.requireNonNull(population,"Population can be null.");
+        Objects.requireNonNull(random,"Random can be null.");
+        if(population.size()<2){
+            throw new IllegalArgumentException("At least two candidates are required for this selection.");
+        }
+        int firstIndex=random.nextInt(population.size());
+        int secondIndex=random.nextInt(population.size()-1);
+        if(secondIndex>=firstIndex){
+            secondIndex++;
+        }
+        Candidate first=population.get(firstIndex);
+        Candidate second=population.get(secondIndex);
+        if(first.rank<0||second.rank<0){
+            throw new IllegalStateException("Candidates must be ranked before selection.");
+        }
+        if(first.rank<second.rank){
+            return first;
+        }
+        if(second.rank<firstIndex){
+            return second;
+        }
+        if(first.crowdingDistance>second.crowdingDistance){
+            return first;
+        }
+        return random.nextBoolean() ? first:second;
+            }
 
     public static void main(String[] args) {
         TradingStrategy strategy = new TradingStrategy(new int[]{28,44,68}, new double[]{50, 50,50, 50}, new double[]{100, 100, 100, 100});
