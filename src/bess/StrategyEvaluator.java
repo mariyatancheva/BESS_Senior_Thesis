@@ -7,7 +7,7 @@ public class StrategyEvaluator {
     private static final ZoneId timeZone=ZoneId.of("Europe/Sofia");
     private final SpeculationCalculator calculator = new SpeculationCalculator();
     public record Evaluation(double totalProfitEUR, double maxDrawdownEUR, int buyIntervals, int sellIntervals, int idleIntervals){}
-        public Evaluation evaluation(TradingStrategy strategy, List<SpeculationRecord> records, double tradePowerMW){
+        public Evaluation evaluate(TradingStrategy strategy, List<SpeculationRecord> records, double tradePowerMW){
             Objects.requireNonNull(strategy,"Strategy cannot be null.");
             Objects.requireNonNull(records,"Records cannot be null.");
             if(records.isEmpty()){

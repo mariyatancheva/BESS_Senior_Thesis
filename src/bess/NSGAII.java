@@ -139,6 +139,37 @@ public class NSGAII {
             }
             return new TradingStrategy(boundaries,buyThresholds,sellThresholds);
             }
+            private static List<Candidate> createInitialPopulation(int populationSize, int minPeriodQuarters, double minPrice, double maxPrice, List<SpeculationRecord> records, double tradePowerMW, Random random){
+        Objects.requireNonNull(random,"Random generator cannot be null.");
+        Objects.requireNonNull(records,"Records cannot be null.");
+        if(populationSize<2){
+            throw new IllegalArgumentException("Population must contain at least two candidates.");
+        }
+        if(minPeriodQuarters<1||minPeriodQuarters>24){
+            throw new IllegalArgumentException("Minimum period length must be between 1 and 24 quarters");
+        }
+        if(!Double.isFinite(minPrice)||minPrice>=maxPrice|| !Double.isFinite(maxPrice-minPrice)){
+            throw new IllegalArgumentException("Price limits must be finite and strictly increasing");
+        }
+        if (records.isEmpty()){
+            throw new IllegalArgumentException("Trading records cannot be empty.");
+        }
+        if(!Double.isFinite(tradePowerMW)||tradePowerMW<=0){
+            throw new IllegalArgumentException("Trading power must be positive and finite.");
+        }
+        StrategyEvaluator evaluator=new StrategyEvaluator();
+        List<Candidate> population=new ArrayList<>();
+        for(int i=0;i<populationSize;i++){
+            TradingStrategy strategy=createRandomStrategy(random,minPeriodQuarters,minPrice,maxPrice);
+            StrategyEvaluator.Evaluation evaluation=evaluator.evaluate(strategy,records,tradePowerMW);
+            population.add(new Candidate(strategy,evaluation));
+        }
+        List<List<Candidate>> fronts=nonDominatedSort(population);
+        for(List<Candidate> front : fronts){
+            calculateCrowdingDistance(front);
+        }
+        return population;
+            }
 
     public static void main(String[] args) {
         TradingStrategy strategy = new TradingStrategy(new int[]{28,44,68}, new double[]{50, 50,50, 50}, new double[]{100, 100, 100, 100});
