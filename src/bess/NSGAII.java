@@ -297,6 +297,36 @@ public class NSGAII {
             }
             return new TradingStrategy(boundaries, buy, sell);
         }
+        public static List<Candidate> selectNextGeneration(List<Candidate> combinedPopulation,int populationSize, Random random){
+        Objects.requireNonNull(combinedPopulation,"Combined population cannot be null");
+        Objects.requireNonNull(random,"Random generator cannot be null");
+        if(populationSize<2||combinedPopulation.size()<populationSize){
+            throw new IllegalArgumentException("There must be enough candidates for the next generation.");
+        }
+        List<List<Candidate>> fronts=nonDominatedSort(combinedPopulation);
+        List<Candidate> nextGeneration =new ArrayList<>();
+        for(List<Candidate> front:fronts){
+            calculateCrowdingDistance(front);
+            int remainingPlaces=populationSize-nextGeneration.size();
+            if(front.size()<=remainingPlaces){
+                nextGeneration.addAll(front);
+            }else{
+                List<Candidate>orderedFront=new ArrayList<>(front);
+                Collections.shuffle(orderedFront,random);
+                orderedFront.sort(Comparator.comparingDouble((Candidate candidate)->candidate.crowdingDistance).reversed());
+                for(int i=0;i<remainingPlaces;i++){
+                    nextGeneration.add(orderedFront.get(i));
+                }
+            }
+            if(nextGeneration.size()==populationSize){
+                break;
+            }
+        }
+        if(nextGeneration.size()!=populationSize){
+            throw new IllegalStateException("Could not form a complete next generation.");
+        }
+        return nextGeneration;
+        }
 
 
 
