@@ -12,14 +12,14 @@ public class StrategyEvaluatorCheck {
                 new SpeculationRecord(start.plusSeconds(2700),10,10,40),
                 new SpeculationRecord(start.plusSeconds(3600),200,10,40));
         StrategyEvaluator evaluator=new StrategyEvaluator();
-        StrategyEvaluator.Evaluation result=evaluator.evaluation(strategy,records,4);
+        StrategyEvaluator.Evaluation result=evaluator.evaluate(strategy,records,4);
         checkClose(result.totalProfitEUR(),180,"Total profit");
         checkClose(result.maxDrawdownEUR(),80,"Maximum drawdown");
         if(result.buyIntervals()!=3 || result.sellIntervals() !=1 || result.idleIntervals()!=1){
             throw new AssertionError("Unexpected numbers of buy,sell or idle intervals.");
         }
         System.out.println("Interval counts check passed.");
-        StrategyEvaluator.Evaluation initalLoss=evaluator.evaluation(strategy,List.of(new SpeculationRecord(start,10,10,40)),4);
+        StrategyEvaluator.Evaluation initalLoss=evaluator.evaluate(strategy,List.of(new SpeculationRecord(start,10,10,40)),4);
         checkClose(initalLoss.totalProfitEUR(),-30,"Initial loss");
         checkClose(initalLoss.maxDrawdownEUR(),30,"Drawdown from zero");
         System.out.println("All strategy  evaluation checks passed.");
