@@ -197,6 +197,35 @@ public class NSGAII {
         }
         return random.nextBoolean() ? first:second;
             }
+            private static TradingStrategy crossover(TradingStrategy first,TradingStrategy second, Random random){
+        Objects.requireNonNull(first,"First parent cannot be null");
+        Objects.requireNonNull(second,"Second parent cannot be null");
+        Objects.requireNonNull(random,"Random generator cannot be null");
+        int[] firstBoundaries=first.getBoundaries();
+        int[] secondBoundaries=second.getBoundaries();
+        int[] childBoundaries=new int[3];
+        double timeWeight=random.nextDouble();
+        for(int i=0;i<3;i++){
+            double combined=timeWeight*firstBoundaries[i]+(1.0-timeWeight)*secondBoundaries[i];
+            childBoundaries[i]=(int)Math.round(combined);
+        }
+        double[] firstBuy=first.getBuyThresholds();
+        double[] secondBuy=second.getBuyThresholds();
+        double[] firstSell=first.getSellThresholds();
+        double[] secondSell=second.getSellThresholds();
+        double[] childBuy=new double[4];
+        double[] childSell=new double[4];
+        for(int i=0;i<4;i++){
+            double priceWeight=random.nextDouble();
+            childBuy[i]=priceWeight*firstBuy[i]+(1.0-priceWeight)*secondBuy[i];
+            childSell[i]=priceWeight*firstSell[i]+(1.0-priceWeight)*secondSell[i];
+            if(childBuy[i]>=childSell[i]){
+                childBuy[i]=firstBuy[i];
+                childSell[i]=firstSell[i];
+            }
+        }
+        return new TradingStrategy(childBoundaries,childBuy,childSell);
+            }
 
     public static void main(String[] args) {
         TradingStrategy strategy = new TradingStrategy(new int[]{28,44,68}, new double[]{50, 50,50, 50}, new double[]{100, 100, 100, 100});
