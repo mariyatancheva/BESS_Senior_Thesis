@@ -327,6 +327,49 @@ public class NSGAII {
         }
         return nextGeneration;
         }
+        public record Solution(TradingStrategy strategy, StrategyEvaluator.Evaluation evaluation){
+        }
+        public List<Solution> optimize(List<SpeculationRecord> records,double tradePowerMW, int populationSize,int generations,int minPeriodQuarters,double minPrice, double maxPrice, double crossoverProbabilty, double mutationProbability,long seed){
+        if(generations<0){
+            throw new IllegalArgumentException("Number of generations cannot be negative");
+        }
+        if(!Double.isFinite(crossoverProbabilty)||crossoverProbabilty<0||crossoverProbabilty>1){
+            throw new IllegalArgumentException("Crossover probability must be between 0 and 1.");
+        }
+        if(!Double.isFinite(mutationProbability)||mutationProbability<0||mutationProbability>1){
+            throw new IllegalArgumentException("Mutation probability must be between 0 and 1.");
+        }
+        Random random=new Random();
+        List<Candidate> population=createInitialPopulation(populationSize,minPeriodQuarters,minPrice,maxPrice,records,tradePowerMW,random);
+        StrategyEvaluator evaluator=new StrategyEvaluator();
+        for(int generation=0;generation<generations;generation++){
+            List<Candidate> offspring=new ArrayList<>();
+            while(offspring.size()<populationSize){
+                Candidate firstParent=selectParent(population,random);
+                Candidate secondParent=selectParent(population,random);
+                TradingStrategy childStrategy;
+                if(random.nextDouble()<crossoverProbabilty) {
+                    childStrategy = crossover(firstParent.strategy, secondParent.strategy, random);
+                }else{
+                    childStrategy=firstParent.strategy;
+                }
+                childStrategy=mutate(childStrategy,random,mutationProbability,minPeriodQuarters,minPrice,maxPrice);
+                StrategyEvaluator.Evaluation evaluation=evaluator.evaluate(childStrategy,records,tradePowerMW);
+                offspring.add(new Candidate(childStrategy,evaluation));
+
+            }
+            List<Candidate> combined=new ArrayList<>(population);
+            combined.addAll(offspring);
+            population=selectNextGeneration(combined,populationSize,random);
+        }
+        List<List<Candidate>> finalFronts=nonDominatedSort(population);
+        List<Solution> solutions=new ArrayList<>();
+        for(Candidate candidate:finalFronts.get(0)){
+            solutions.add(new Solution(candidate.strategy,candidate.evaluation));
+        }
+        solutions.sort(Comparator.comparingDouble((Solution solution)->solution.evaluation().totalProfitEUR()).reversed());
+        return List.copyOf(solutions);
+        }
 
 
 
