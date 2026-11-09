@@ -30,7 +30,6 @@ public class StrategyEvaluator {
                 }
                 double positionMW=strategy.ChoosePosition(record.getStartTime().atZone(timeZone).toLocalTime(),record.getDAMPrice(),tradePowerMW);
                 double intervalProfit=calculator.calculateProfit(record,positionMW);
-                System.out.println("Time: "+record.getStartTime()+"| DAM"+record.getDAMPrice()+" | Position"+positionMW+" | Profit: "+intervalProfit);
                 totalProfit+=intervalProfit;
                 if(!Double.isFinite(totalProfit)){
                     throw new IllegalStateException("Accumulated profit is not finite.");

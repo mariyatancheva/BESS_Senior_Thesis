@@ -339,7 +339,7 @@ public class NSGAII {
         if(!Double.isFinite(mutationProbability)||mutationProbability<0||mutationProbability>1){
             throw new IllegalArgumentException("Mutation probability must be between 0 and 1.");
         }
-        Random random=new Random();
+        Random random=new Random(seed);
         List<Candidate> population=createInitialPopulation(populationSize,minPeriodQuarters,minPrice,maxPrice,records,tradePowerMW,random);
         StrategyEvaluator evaluator=new StrategyEvaluator();
         for(int generation=0;generation<generations;generation++){
