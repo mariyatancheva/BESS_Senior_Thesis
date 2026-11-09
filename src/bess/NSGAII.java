@@ -365,10 +365,22 @@ public class NSGAII {
         List<List<Candidate>> finalFronts=nonDominatedSort(population);
         List<Solution> solutions=new ArrayList<>();
         for(Candidate candidate:finalFronts.get(0)){
-            solutions.add(new Solution(candidate.strategy,candidate.evaluation));
+           boolean duplicate=false;
+           for(Solution existing :solutions){
+               if(sameStrategy(existing.strategy(),candidate.strategy)){
+                   duplicate=true;
+                   break;
+               }
+           }
+           if(!duplicate){
+               solutions.add(new Solution(candidate.strategy,candidate.evaluation));
+           }
         }
         solutions.sort(Comparator.comparingDouble((Solution solution)->solution.evaluation().totalProfitEUR()).reversed());
         return List.copyOf(solutions);
+        }
+        private static boolean sameStrategy(TradingStrategy first, TradingStrategy second){
+        return Arrays.equals(first.getBoundaries(),second.getBoundaries()) && Arrays.equals(first.getBuyThresholds(),second.getBuyThresholds())&&Arrays.equals(first.getSellThresholds(),second.getSellThresholds());
         }
 
 
