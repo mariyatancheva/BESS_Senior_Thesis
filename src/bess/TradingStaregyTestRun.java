@@ -5,10 +5,15 @@ import java.util.List;
 import java.util.Scanner;
 
 public class TradingStaregyTestRun {
+
     public static void main(String[] args) throws IOException {
-        SpeculationCSVReader reader = new SpeculationCSVReader();
-        List<SpeculationRecord> records = reader.readSpeculation(Path.of("data/speculation.csv"));
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner=new Scanner(System.in);
+        run(scanner);
+    }
+    public static void run(Scanner scanner) throws IOException{
+        SpeculationCSVReader reader=new SpeculationCSVReader();
+        List<SpeculationRecord> records=reader.readSpeculation(Path.of("data/speculation.csv"));
+
         double tradePowerMW;
         while(true) {
             System.out.print("Enter trading power in MW: ");
@@ -62,7 +67,7 @@ public class TradingStaregyTestRun {
         }
         checkSolutions(solutions,minPeriodQuarters,minPrice,maxPrice);
         while(true){
-            System.out.print("\nChoose a strategy (1-"+solutions.size()+") or 0 to exit:");
+            System.out.print("\nChoose a strategy (1-"+solutions.size()+") or 0 to return:");
             if(!scanner.hasNextLine()){
                 break;
             }
