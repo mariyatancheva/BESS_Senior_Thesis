@@ -66,6 +66,21 @@ public class TradingStaregyTestRun {
             System.out.printf( "%-6d %18.2f %22.2f%n",i+1, evaluation.totalProfitEUR(),evaluation.maxDrawdownEUR());
         }
         checkSolutions(solutions,minPeriodQuarters,minPrice,maxPrice);
+        TradingStrategy referenceStrategy = new TradingStrategy(
+                new int[]{24, 48, 72},
+                new double[]{40, 40, 40, 40},
+                new double[]{123, 123, 123, 123}
+        );
+        StrategyEvaluator evaluator = new StrategyEvaluator();
+
+        StrategyEvaluator.Evaluation referenceResult = evaluator.evaluate(referenceStrategy, records, tradePowerMW);
+        StrategyEvaluator.Evaluation highestProfitResult = solutions.get(0).evaluation();
+        System.out.printf("%nSeptember comparison at %.2f MW%n", tradePowerMW);
+        System.out.printf("%-25s %18s %22s%n", "Strategy", "Profit (EUR)", "Max drawdown (EUR)");
+        System.out.printf("%-25s %18.2f %22.2f%n", "Reference 40/123", referenceResult.totalProfitEUR(), referenceResult.maxDrawdownEUR());
+        System.out.printf("%-25s %18.2f %22.2f%n", "NSGA-II highest profit", highestProfitResult.totalProfitEUR(), highestProfitResult.maxDrawdownEUR());
+        System.out.printf("%nProfit difference: %.2f EUR%n", highestProfitResult.totalProfitEUR() - referenceResult.totalProfitEUR());
+        System.out.printf("Drawdown reduction: %.2f EUR%n", referenceResult.maxDrawdownEUR() - highestProfitResult.maxDrawdownEUR());
         while(true){
             System.out.print("\nChoose a strategy (1-"+solutions.size()+") or 0 to return:");
             if(!scanner.hasNextLine()){
@@ -89,6 +104,7 @@ public class TradingStaregyTestRun {
         }
 
     }
+
     private static void checkSolutions(List<NSGAII.Solution> solutions,int minPeriodQuarters, double minPrice, double maxPrice){
         if(solutions.isEmpty()){
             throw new AssertionError("No strategies returned.");
