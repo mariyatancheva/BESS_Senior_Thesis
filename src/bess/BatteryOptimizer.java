@@ -27,10 +27,6 @@ public class BatteryOptimizer {
         return specification.getMinEnergyMWh() + stateIndex * energyStepMWh;
     }
 
-    public int getNumOfStates() {
-        return numOfStates;
-    }
-
     public double getRequiredPowerMW(int startState, int endState) {
         double durationInterval = 0.25;
         double startEnergyMWh = getEnergyPerState(startState);
@@ -119,115 +115,7 @@ public class BatteryOptimizer {
         }
         return transitions;
     }
-    //optimization
 
-    public BatteryOptimizationResult maximumTradingprofit(List<PriceInterval> prices) {
-        Objects.requireNonNull(prices, "Price list must not be null.");
-
-        if (prices.isEmpty()) {
-            throw new IllegalArgumentException("The price list must not be empty.");
-        }
-        Cycle[] phases = Cycle.values();
-        int numberofPhases = phases.length;
-        int watingPhaseIndex = Cycle.WAITING.ordinal();
-
-        double[][] profitAtTheBeginningOfTheInterval = new double[numOfStates][numberofPhases];
-        for (double[] row : profitAtTheBeginningOfTheInterval) {
-            Arrays.fill(row, Double.NEGATIVE_INFINITY);
-        }
-        profitAtTheBeginningOfTheInterval[0][watingPhaseIndex] = 0;
-
-        int[][][] previousStates = new int[prices.size()][numOfStates][numberofPhases];
-        int[][][] previousPhases = new int[prices.size()][numOfStates][numberofPhases];
-        for (int intervalIndex = 0; intervalIndex < prices.size(); intervalIndex++) {
-                for (int state = 0; state < numOfStates; state++) {
-                    Arrays.fill(previousStates[intervalIndex][state], -1);
-                    Arrays.fill(previousPhases[intervalIndex][state], -1);
-                }
-            }
-
-            for (int intervalIndex = 0; intervalIndex < prices.size(); intervalIndex++) {
-                PriceInterval interval = prices.get(intervalIndex);
-                double[][] profitAtTheEndOfTheInterval = new double[numOfStates][numberofPhases];
-                for (double[] row : profitAtTheEndOfTheInterval) {
-                    Arrays.fill(row, Double.NEGATIVE_INFINITY);
-                }
-                for (int startState = 0; startState < numOfStates; startState++) {
-                    for (int phaseIndex = 0; phaseIndex < numberofPhases; phaseIndex++) {
-                        double currentProfit = profitAtTheBeginningOfTheInterval[startState][phaseIndex];
-                        if (currentProfit == Double.NEGATIVE_INFINITY) {
-                            continue;
-                        }
-                        Cycle currentPhase = phases[phaseIndex];
-
-                        for (int endState = 0; endState < numOfStates; endState++) {
-                            if (!isTransitionToNewStateIsAllowed(startState, endState)) {
-                                continue;
-                            }
-                            Cycle nextPhase = getNextPhaseCycle(currentPhase, startState, endState);
-                            if (nextPhase == null) {
-                                continue;
-                            }
-                            int nextPhaseIndex = nextPhase.ordinal();
-                            double transitionProfit = getTransitionProfitEUR(startState, endState, interval.getPricePerMWh());
-                            double nonfinalResult = currentProfit + transitionProfit;
-
-                            if (nonfinalResult > profitAtTheEndOfTheInterval[endState][nextPhaseIndex]) {
-                                profitAtTheEndOfTheInterval[endState][nextPhaseIndex] = nonfinalResult;
-                                previousStates[intervalIndex][endState][nextPhaseIndex] = startState;
-                                previousPhases[intervalIndex][endState][nextPhaseIndex] = phaseIndex;
-                            }
-                        }
-
-                    }
-                }
-                profitAtTheBeginningOfTheInterval = profitAtTheEndOfTheInterval;
-            }
-            double bestProfit = profitAtTheBeginningOfTheInterval[0][watingPhaseIndex];
-            if (!Double.isFinite(bestProfit)) {
-                throw new IllegalArgumentException("A valid schedule was not found,");
-            }
-            List<Schedule> steps = new ArrayList<>();
-            int endState = 0;
-            int endPhaseIndex = watingPhaseIndex;
-            for (int intervalIndex = prices.size() - 1; intervalIndex >= 0; intervalIndex--) {
-                int startState = previousStates[intervalIndex][endState][endPhaseIndex];
-                int startPhaseIndex = previousPhases[intervalIndex][endState][endPhaseIndex];
-                if (startState == -1 || startPhaseIndex == -1) {
-                    throw new IllegalArgumentException("The schedule cannot be reconstructed");
-                }
-                Battery action;
-                if (endState > startState) {
-                    action = Battery.CHARGE;
-                } else if (startState > endState) {
-                    action = Battery.DISCHARGE;
-                } else {
-                    action = Battery.IDLE;
-                }
-                double powerMW = getRequiredPowerMW(startState, endState);
-                steps.add(new Schedule(prices.get(intervalIndex), action, powerMW));
-                endState = startState;
-                endPhaseIndex = startPhaseIndex;
-
-
-            }
-            Collections.reverse(steps);
-            return new BatteryOptimizationResult(bestProfit, steps);
-
-
-        }
-        public BatteryOptimizationResult oneFullCycle(List<PriceInterval> prices){
-        return optimizeOneCycle(prices,true);
-        }
-        public BatteryOptimizationResult oneAdditionalCycle(List<PriceInterval> prices){
-        return optimizeOneCycle(prices, false);
-        }
-        public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval>prices, boolean requireFullCycle){
-        return optimizeOneCycle(prices,requireFullCycle,null);
-        }
-        public BatteryOptimizationResult optimizeOneCycle (List<PriceInterval> prices, boolean requireFullCycle, LocalDate cycleStartDate){
-        return optimizeOneCycle(prices, requireFullCycle, cycleStartDate, false);
-        }
     public BatteryOptimizationResult optimizeOneCycle(List<PriceInterval> prices, boolean requireFullCycle, LocalDate cycleStartDate, boolean exactBounds){
         Objects.requireNonNull(prices,"Price list must not be null.");
         if (prices.isEmpty()){

@@ -46,6 +46,10 @@ public class SolarForecast {
                     pastGeneration.add(record);
                 }
             }
+            if (pastGeneration.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "No generation data is available before the selected date." + "Please select a later date.");
+            }
             ForecastDataPreparation preparation=new ForecastDataPreparation();
             List<HourlyGenerationData> hourlyGeneration=preparation.aggregateHourly(pastGeneration);
             List<ForecastDataPreparation.TrainingRow> trainingRows=preparation.combineData(hourlyGeneration,weather);

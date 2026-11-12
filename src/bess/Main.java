@@ -2,7 +2,6 @@ package bess;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.Scanner;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,6 +17,7 @@ public class Main {
                 System.out.println("Solar and BESS planning system");
                 System.out.println("1. BESS scheduling");
                 System.out.println("2. Solar generation forecasting");
+                System.out.println("3. Electricity trading strategy optimization");
                 System.out.println("0. Exit");
                 System.out.print("Choose an option: ");
 
@@ -35,6 +35,15 @@ public class Main {
                     case "2":
                         SolarForecast.run(scanner);
                         break;
+                    case "3":
+                        try{
+                            TradingStaregyTestRun.run(scanner);
+                        } catch (IOException exception){
+                            System.out.println("Trading data could not be read: "+ exception.getMessage());
+                        } catch (IllegalArgumentException | IllegalStateException exception){
+                            System.out.println("Trading optimization failed: "+exception.getMessage());
+                        }
+                        break;
 
                     case "0":
                         System.out.println("Goodbye!");
@@ -42,7 +51,7 @@ public class Main {
 
                     default:
                         System.out.println(
-                                "Invalid option. Enter 1, 2 or 0."
+                                "Invalid option. Enter 1, 2, 3 or 0."
                         );
                 }
             }
@@ -72,11 +81,6 @@ public class Main {
 
                     );
                     break;
-                } catch (java.util.InputMismatchException exception) {
-                    System.out.println("Invalid input. Enter numerical values for capacity and power. Try again. ");
-                    scanner.nextLine();
-
-
                 } catch (IllegalArgumentException exception) {
                 System.out.println("Invalid battery parameters." + exception.getMessage() + "Try again");
                     }
@@ -154,9 +158,7 @@ public class Main {
                     ZonedDateTime cycleStart = null;
                     double maxSoC = battery.getMinSoC();
                     double cycleCostEUR = 0;
-                    ;
                     double cycleRevenueEUR = 0;
-                    ;
 
                     for (Schedule step : dailyFinancialResult.getSteps()) {
                         if (!cycleInprogress && step.getAction() == Battery.CHARGE) {

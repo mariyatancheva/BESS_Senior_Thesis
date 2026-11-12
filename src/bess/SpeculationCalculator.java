@@ -10,12 +10,12 @@ public class SpeculationCalculator {
             return 0.0;
         }
         double energyMwh=positionMW*0.25;
-        double originalImbalance=record.getImbalancePriceEURPerMWh();
+        double originalImbalance=record.getSystemImbalanceMWh();
         double adjustedImbalance=originalImbalance+(positionMW>0.0 ? (positionMW-1.0)/4.0 : (positionMW+1.0)/4.0);
         if(!Double.isFinite(adjustedImbalance)){
             throw new IllegalStateException("Adjusted system imbalance is not finite.");
         }
-        boolean sameSign=(originalImbalance>0.0 && adjustedImbalance>0.0) || (originalImbalance<0.0 && adjustedImbalance<0.0);
+        boolean sameSign=originalImbalance==0.0 || adjustedImbalance==0.0 || (originalImbalance>0.0 && adjustedImbalance>0.0)|| (originalImbalance<0.0 && adjustedImbalance<0.0);
         double settlementPrice;
         if(sameSign){
             settlementPrice=record.getImbalancePriceEURPerMWh();
